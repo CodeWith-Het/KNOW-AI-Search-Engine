@@ -10,7 +10,7 @@ const statusCode = err.status || err.statusCode || 500
         message: err.message,
     };
  
-    if (process.env.NODE_ENVIRONMENT == "production") {
+    if (process.env.NODE_ENVIRONMENT == "development") {
       response.stack = err.stack;
     }
 
