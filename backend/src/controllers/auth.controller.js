@@ -28,11 +28,8 @@ export const registerUser = async(req,res,next) => {
           id: user._id,
           isVerified: user.isVerified,
         },
-        process.env.JWT_SECRET,
-        { expiresIn: "1d" },
+        process.env.JWT_SECRET
       );
-
-      res.cookie("token", token);
 
       res.status(201).json({
         message: "User Successfully Registed",
