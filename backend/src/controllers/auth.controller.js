@@ -10,9 +10,11 @@ export const registerUser = async(req,res,next) => {
       });
 
       if (isAlreadyExist) {
-        const error = new Error("User Already Exist this Email or Username")
-        error.statusCode = 400
-        return next(error)
+        return res.status(400).json({
+          message: "User with this email or username already exists",
+          success: false,
+          err: "User already exists",
+        });
       }
 
       const user = await userModel.create({
