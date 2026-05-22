@@ -1,9 +1,8 @@
 import dotenv from "dotenv";
-dotenv.config(); // Isko yahin chalana sabse zaroori hai taaki variables turant mil jayein!
+dotenv.config();
 
 import nodemailer from "nodemailer";
 
-// Yeh line humein batayegi ki email sahi se load hua ya nahi
 console.log("Mail Service Check -> Email ID:", process.env.GOOGLE_USER);
 
 const transporter = nodemailer.createTransport({
@@ -38,7 +37,7 @@ export async function sendEmail({ to, subject, html, text }) {
 
     return details;
   } catch (error) {
-    console.error("Email send karte waqt error aaya:", error);
+    console.error("error is send email take more time", error);
     throw error;
   }
 }
