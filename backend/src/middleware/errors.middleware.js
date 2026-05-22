@@ -1,9 +1,7 @@
 import dotenv from "dotenv";
 dotenv.config()
 
-const errorhandle = (err, req, res, next) => {
-
-const statusCode = err.status || err.statusCode || 500 
+const errorhandle = (err, req, res, next) => { 
 
     const response = {
         success: false,
