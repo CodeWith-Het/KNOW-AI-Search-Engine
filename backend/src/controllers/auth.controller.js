@@ -138,3 +138,42 @@ export const verifyEmailUrl = async (req, res, next) => {
     next(error);
   }
 };
+
+export const loginUser =async (req,res,next) => {
+  try {
+    const { loginId, password } = req.body;
+
+    const user = await userModel
+      .findOne({
+        $or: [{ loginId: username }, { loginId: email }],
+      })
+      .select("+password");
+
+    if (!user) {
+      return res.status(400).json({
+        message: "User not found",
+        success: false,
+        error: new Error("User not found"),
+      });
+    }
+
+    const isPasswordMatch = await user.comaprePassword(user.password);
+
+    if (!isPasswordMatch) {
+      return res.status(400).json({
+        message: "invaild password , please provide right password",
+        success: false,
+        error: new Error("Invaild Password"),
+      });
+    }
+
+    res.status(200).json({
+      message: "User successfully Login",
+      success: true,
+    });
+  
+ }
+  catch (error) {
+    next(error)
+  }
+}
