@@ -1,20 +1,22 @@
-import {body , validationResult } from "express-validator"
+import { body, validationResult } from "express-validator";
 
 export const validate = (req, res, next) => {
-    const errors = validationResult(req)
+  const errors = validationResult(req);
 
-    if (errors.isEmpty()) {
-       return next()
-    }
+  if (errors.isEmpty()) {
+    return next();
+  }
 
-    res.status(400).json({
-      errors: errors.array()
-    });
-}
+  res.status(400).json({
+    errors: errors.array(),
+  });
+};
 
 export const registerValidation = [
   body("username").isString().withMessage("username should be a String"),
-  body("email").isEmail().withMessage("email should be a string for varification"),
+  body("email")
+    .isEmail()
+    .withMessage("email should be a string for verification"),
   body("password").custom((value) => {
     if (!value || value.length < 6) {
       throw new Error("password should be at least 6 characters long");
@@ -27,6 +29,5 @@ export const registerValidation = [
     }
     return true;
   }),
-
   validate,
 ];

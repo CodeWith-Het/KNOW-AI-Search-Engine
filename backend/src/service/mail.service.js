@@ -3,8 +3,6 @@ dotenv.config();
 
 import nodemailer from "nodemailer";
 
-console.log("Mail Service Check -> Email ID:", process.env.GOOGLE_USER);
-
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {

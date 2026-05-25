@@ -1,29 +1,32 @@
-import jwt from "jsonwebtoken"
+import dotenv from "dotenv"
+dotenv.config()
 
-export const authUser= async(req,res,next) =>{
-    const token = req.cookies.token
+import jwt from "jsonwebtoken";
 
-    if (!token) {
-        return res.status(400).json({
-            message: "token not provide , logimn please",
-            succcess: false,
-            error: new Error("token not provide")
-        })
-    }
+export const authUser = async (req, res, next) => {
+  const token = req.cookies?.token;
 
-    let decode = null
+  if (!token) {
+    return res.status(400).json({
+      message: "token not provide , get Loign",
+      success: false,
+      error: "token not provide",
+    });
+  }
 
-    try {
-        decode = jwt.verify(token, process.env.JWT_SECRET)
-        next()
+  let decoded = null;
 
-        req.user = decode
-    }
-    catch (error) {
-        return res.status(401).json({
-            messageL: "invaild token , can you login please",
-            success: false,
-            error:new Error("Invaild token")
-        })
-    }
-}
+  try {
+    decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (error) {
+    // this is errro show
+    console.log("🚨 JWT VERIFY ASLI ERROR:", error.message);
+    return res.status(401).json({
+      message: "invalid token , please login again",
+      success: false,
+      error: "Invalid token",
+    });
+  }
+};

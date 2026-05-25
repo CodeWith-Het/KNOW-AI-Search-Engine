@@ -12,8 +12,8 @@ export const registerUser = async (req, res, next) => {
 
     if (isAlreadyExist) {
       return res.status(409).json({
-        message: "User with this email or username already exists",
         success: false,
+        message: "User with this email or username already exists",
         error: "User already exists",
       });
     }
@@ -59,8 +59,8 @@ export const registerUser = async (req, res, next) => {
     }
 
     res.status(201).json({
-      message: "User Successfully Registered. Please verify your email.",
       success: true,
+      message: "User Successfully Registered. Please verify your email.",
       user: {
         id: user._id,
         username: user.username,
@@ -77,11 +77,11 @@ export const verifyEmailUrl = async (req, res, next) => {
     const emailVerificationToken = req.query.token;
 
     if (!emailVerificationToken) {
-      return res.status(400).send(`
-        <h2 style="color: red; text-align: center; margin-top: 50px;">
-          ❌ Verification token missing hai! Kripya email mein aaye poore link par click karein.
-        </h2>
-      `);
+      return res.status(400).json({
+        success: false,
+        message: "Token not provide, please check you mail",
+        error:"token not provide"
+      })
     }
 
     let decode = null;
@@ -89,29 +89,28 @@ export const verifyEmailUrl = async (req, res, next) => {
       decode = jwt.verify(emailVerificationToken, process.env.JWT_SECRET);
     } catch (error) {
 
-      return res.status(400).send(`
-        <h2 style="color: red; text-align: center; margin-top: 50px;">
-          ❌ Invalid or Expired Token! Kripya naya link request karein.
-        </h2>
-      `);
+      return res.status(400).json({
+        success: false,
+        message: "Invail Token, Please provide right token",
+        error:"Invaild Token"
+      })
     }
 
     const user = await userModel.findOne({ email: decode.email });
 
     if (!user) {
-      return res.status(404).send(`
-        <h2 style="color: red; text-align: center; margin-top: 50px;">
-          ❌ User not found in database!
-        </h2>
-      `);
+      return res.status(404).json({
+        success: false,
+        message: "User not find, Please provide right information",
+        error:"User not found"
+      })
     }
 
     if (user.isVerified) {
-      return res.status(200).send(`
-         <h2 style="color: green; text-align: center; margin-top: 50px;">
-           ✅ Email is already verified! Aap login kar sakte hain.
-         </h2>
-       `);
+      return res.status(200).json({
+        success: true,
+        message: "user is verified"
+      })
     }
 
     user.isVerified = true;
@@ -145,34 +144,79 @@ export const loginUser =async (req,res,next) => {
 
     const user = await userModel
       .findOne({
-        $or: [{ loginId: username }, { loginId: email }],
+        $or: [{ username:loginId }, { email:loginId }],
       })
       .select("+password");
 
     if (!user) {
       return res.status(400).json({
-        message: "User not found",
         success: false,
-        error: new Error("User not found"),
+        message: "User not found , please provide right information",
+        error: "User not found",
       });
     }
 
-    const isPasswordMatch = await user.comaprePassword(user.password);
+    const isPasswordMatch = await user.comparePassword(password);
 
     if (!isPasswordMatch) {
-      return res.status(400).json({
-        message: "invaild password , please provide right password",
+      return res.status(401).json({
         success: false,
-        error: new Error("Invaild Password"),
+        message: "Invalid password, please provide right password",
+        error: "Invaild Password",
       });
     }
 
+    const token = jwt.sign(
+      {
+        id: user._id,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "2d" },
+    );
+
+   res.cookie("token",token)
+
     res.status(200).json({
-      message: "User successfully Login",
       success: true,
-    });
-  
+      message: "User successfully Login",
+      user: {
+        id: user._id,
+        username: user.username,
+        email:user.email
+      }
+    });  
  }
+  catch (error) {
+    next(error)
+  }
+}
+
+export const getUser = async (req, res, next) => {
+  try {
+    const userid = req.user.id
+
+  const user = await userModel.findById(userid);
+  
+  if (!user) {
+    return res.status(404).json({
+      success:false,
+      message: "User not exist",
+      error:"User not exist"
+    })
+  }
+
+  // user.password = undefined
+  
+  res.status(200).json({
+    success:true,
+    message:"User Successfully Fetch",
+    user: {
+      id: user._id,
+      username: user.username,
+      email:user.email
+    }
+  })
+  }
   catch (error) {
     next(error)
   }
