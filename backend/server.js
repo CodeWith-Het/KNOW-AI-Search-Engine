@@ -1,5 +1,8 @@
 import app from "./src/app.js";
 import connectToDB from "./src/config/database.js";
+import { testAi } from "./src/service/ai.service.js";
+
+testAi()
 
 connectToDB();
 

@@ -195,7 +195,7 @@ export const getUser = async (req, res, next) => {
   try {
     const userid = req.user.id
 
-  const user = await userModel.findById(userid);
+  const user = await userModel.findById(userid).select("-password") 
   
   if (!user) {
     return res.status(404).json({
