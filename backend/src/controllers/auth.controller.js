@@ -116,6 +116,8 @@ export const verifyEmailUrl = async (req, res, next) => {
     user.isVerified = true;
     await user.save();
 
+    const frontendLoginUrl = "http://localhost:3000/api/auth/login";
+
     const html = `
     <div style="text-align: center; margin-top: 50px; font-family: sans-serif; background-color: #f9fafb; padding: 40px;">
           <div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: inline-block;">
@@ -124,7 +126,7 @@ export const verifyEmailUrl = async (req, res, next) => {
             <p style="color: #6B7280;">Welcome aboard, <strong>${user.username}</strong>! Aapka account activate ho gaya hai.</p>
             <p style="color: #9CA3AF; font-size: 14px; margin-top: 20px;">Ab aap is tab ko close karke app mein login kar sakte hain.</p>
             
-           <a href="/api/auth/login" style="background-color: #4F46E5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 20px; font-weight: bold;">
+           <a href="${frontendLoginUrl}" style="background-color: #4F46E5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 20px; font-weight: bold;">
               Go to Login
             </a>
             </a>
@@ -205,7 +207,7 @@ export const getUser = async (req, res, next) => {
     })
   }
 
-  // user.password = undefined
+  user.password = undefined
   
   res.status(200).json({
     success:true,
