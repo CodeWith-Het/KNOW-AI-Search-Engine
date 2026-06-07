@@ -1,6 +1,7 @@
 import userModel from "../models/user.model.js";
 import jwt from "jsonwebtoken";
 import { sendEmail } from "../service/mail.service.js";
+import redis from '../config/redis.js';
 
 export const registerUser = async (req, res, next) => {
   try {
@@ -218,6 +219,35 @@ export const getUser = async (req, res, next) => {
       email:user.email
     }
   })
+  }
+  catch (error) {
+    next(error)
+  }
+}
+
+export const logoutUser = async(req,res,next) => {
+  try {
+    const token = req.cookies.token;
+
+    if (token) {
+      await redis.set(
+        `blacklist:${token}`,
+        "true",
+        "EX",
+        3 * 24 * 60 * 60, // 3 days in seconds
+      );
+    }
+
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "User successfully logout",
+    })
   }
   catch (error) {
     next(error)

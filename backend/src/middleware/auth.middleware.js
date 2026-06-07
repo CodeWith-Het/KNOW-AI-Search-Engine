@@ -2,6 +2,7 @@ import dotenv from "dotenv"
 dotenv.config()
 
 import jwt from "jsonwebtoken";
+import redis from "../config/redis.js";
 
 export const authUser = async (req, res, next) => {
   const token = req.cookies?.token;
@@ -11,6 +12,15 @@ export const authUser = async (req, res, next) => {
       message: "token not provide , get Loign",
       success: false,
       error: "token not provide",
+    });
+  }
+
+  // blacklist
+  const isBlacklisted = await redis.get(`bl_${token}`);
+  if (isBlacklisted) {
+    return res.status(401).json({
+      success: false,
+      message: "Token has been invalidated. Please login again.",
     });
   }
 
