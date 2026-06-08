@@ -17,6 +17,7 @@ export const authUser = async (req, res, next) => {
 
   // blacklist
   const isBlacklisted = await redis.get(`bl_${token}`);
+
   if (isBlacklisted) {
     return res.status(401).json({
       success: false,
@@ -32,7 +33,8 @@ export const authUser = async (req, res, next) => {
     next();
   } catch (error) {
     // this is errro show
-    console.log("🚨 JWT VERIFY ASLI ERROR:", error.message);
+    console.log("🚨 JWT VERIFY ERROR:", error.message);
+    
     return res.status(401).json({
       message: "invalid token , please login again",
       success: false,

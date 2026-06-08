@@ -31,3 +31,19 @@ export const registerValidation = [
   }),
   validate,
 ];
+
+export const loginValidation = [
+  body("loginId")
+    .notEmpty()
+    .withMessage("username or email is required")
+    .toString()
+    .withMessage("username or email must be string"),
+  
+  body("password")
+    .notEmpty()
+    .withMessage("password is required")
+    .toString()
+    .withMessage("password must be string"),
+  
+  validate
+];
