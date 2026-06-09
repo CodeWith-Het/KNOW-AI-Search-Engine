@@ -36,14 +36,20 @@ export const loginValidation = [
   body("loginId")
     .notEmpty()
     .withMessage("username or email is required")
-    .toString()
-    .withMessage("username or email must be string"),
+    .isString().withMessage("username and email must be string"),
   
-  body("password")
-    .notEmpty()
-    .withMessage("password is required")
-    .toString()
-    .withMessage("password must be string"),
+body("password").custom((value) => {
+    if (!value || value.length < 6) {
+      throw new Error("password should be at least 6 characters long");
+    }
+    const passwordRegex = /^(?=.*[A-Z])(?=.*\d).+$/;
+    if (!passwordRegex.test(value)) {
+      throw new Error(
+        "password should contain at least one uppercase letter and one number",
+      );
+    }
+    return true;
+  }),
   
   validate
 ];
