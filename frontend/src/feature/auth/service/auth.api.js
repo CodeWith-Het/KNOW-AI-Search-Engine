@@ -7,11 +7,11 @@ const api = axios.create({
 
 export const register =async ({username,email,password}) => {
     try {
-        const response = await api.post("/login"{ username, email, password })
+        const response = await api.post("/register",{ username, email, password })
         return response.data
     }
     catch (error) {
-        return err.response?.data?.message || "Registration Failed"
+        throw new Error(error.response?.data?.message || "Registration Failed", { cause: error })
     }
 }
 
@@ -21,15 +21,16 @@ export const login = async ({ loginId, password })=>{
         return response.data
     }
     catch (error) {
-        return error.response?.data?.message || "Login Failed"
+        throw new Error(error.response?.data?.message || "Login Failed",{cause:error})
     }
 }
 
 export const getUser = async () => {
     try {
         const response = await api.get("/getuser")
+        return response.data    
     }
     catch (error) {
-        return error.response?.data?.message || "User not get"
+        throw new Error( error.response?.data?.message || "User not get",{cause:error})
     }
 }

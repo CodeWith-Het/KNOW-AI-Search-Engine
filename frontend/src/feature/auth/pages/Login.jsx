@@ -1,5 +1,7 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom"; // 🎯 Navigate import kiya
+import { useSelector } from "react-redux"; // 🎯 useSelector import kiya
+import { useAuth } from "./../hook/useAuth";
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -8,6 +10,16 @@ const Login = () => {
   });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+
+  const { loginUser } = useAuth();
+
+  // 🎯 NAYA LOGIC: Redux se user check karo
+  const user = useSelector((state) => state.auth.user);
+
+  // Agar user pehle se login hai, toh seedha Home par bhej do!
+  if (user) {
+    return <Navigate to="/" replace />;
+  }
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -25,23 +37,19 @@ const Login = () => {
 
   const validateForm = () => {
     const newErrors = {};
-
     if (!formData.emailOrUsername.trim()) {
       newErrors.emailOrUsername = "Email or username is required";
     }
-
     if (!formData.password) {
       newErrors.password = "Password is required";
     } else if (formData.password.length < 6) {
       newErrors.password = "Password must be at least 6 characters";
     }
-
     return newErrors;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const newErrors = validateForm();
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -50,9 +58,12 @@ const Login = () => {
 
     setIsLoading(true);
     try {
-      console.log("Login attempt:", formData);
+      await loginUser({
+        loginId: formData.emailOrUsername,
+        password: formData.password,
+      });
     } catch (error) {
-      setErrors({ submit: "Login failed. Please try again." });
+      setErrors({ submit: error.message });
     } finally {
       setIsLoading(false);
     }
@@ -140,12 +151,9 @@ const Login = () => {
               to="/register"
               className="font-semibold text-white hover:text-violet-300"
             >
-              Create one
+              Sign Up 
             </Link>
           </p>
-          <Link to="#" className="text-violet-300 hover:text-violet-100">
-            Forgot password?
-          </Link>
         </div>
       </div>
     </div>
