@@ -33,7 +33,6 @@ const createTransporter = async () => {
       auth: {
         type: "OAuth2",
         user: process.env.GOOGLE_USER,
-        accessToken: accessToken,
         clientId: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
         refreshToken: process.env.REFRESH_TOKEN,
