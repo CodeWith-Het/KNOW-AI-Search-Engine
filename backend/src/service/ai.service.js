@@ -3,7 +3,6 @@ dotenv.config();
 
 import * as z from "zod";
 import { tool } from "@langchain/core/tools";
-// 🎯 YAHAN THA ASLI FIX: 'ChatGoogleGenerativeAI' hota hai sahi naam!
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai"; 
 import readline from "readline/promises";
 import { HumanMessage } from "@langchain/core/messages";
@@ -38,7 +37,7 @@ const searchTool = new TavilySearch({
   maxResults: 2,
 });
 
-// 🎯 FIX: Class ka naam aur default fast model theek kar diya
+// 🎯 model
 const model = new ChatGoogleGenerativeAI({
   model: "gemini-2.5-flash", 
   apiKey: process.env.GEMINI_API_KEY,
@@ -52,6 +51,7 @@ const agent = createAgent({
   systemPrompt: "You are a smart AI agent. You have two main powers: 1. You can search the internet using the search tool to do research on any latest topic. 2. You can send emails using the email tool. Use them wisely based on user requests.",
 });
 
+// testAi function 
 export const testAi = async () => {
   let chatMessage = []; 
 
