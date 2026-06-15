@@ -2,7 +2,7 @@
 import { createBrowserRouter } from 'react-router-dom';
 import Login from '../feature/auth/pages/Login';
 import Register from '../feature/auth/pages/Register';
-import Dashboard from '../feature/chat/Dashboard';
+import Dashboard from './../feature/chat/pages/Dashboard';
 import Protected from '../feature/auth/components/Protected';
 import PublicRouter from '../feature/auth/components/publicRouter';
 

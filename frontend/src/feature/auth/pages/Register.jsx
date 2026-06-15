@@ -1,5 +1,7 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
+import { useAuth } from "../hook/useAuth";
+import { useSelector } from "react-redux";
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -9,6 +11,15 @@ const Register = () => {
   });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+
+  const { registerUser } = useAuth()
+  
+  const user = useSelector((state) => state.auth.user)
+  const loading = useSelector((state) => state.auth.loading)
+  
+  if (user && !loading) {
+    return <Navigate to="/login" replace />
+  }
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -59,9 +70,13 @@ const Register = () => {
 
     setIsLoading(true);
     try {
-      console.log("Register attempt:", formData);
+      await registerUser({
+        username: formData.username,
+        email: formData.email,
+        password:formData.password
+      })
     } catch (error) {
-      setErrors({ submit: "Registration failed. Please try again." });
+      setErrors({ submit: error.message });
     } finally {
       setIsLoading(false);
     }

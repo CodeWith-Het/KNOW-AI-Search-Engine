@@ -1,11 +1,17 @@
 import app from "./src/app.js";
+import http from "http"
 import connectToDB from "./src/config/database.js";
-import { testAi } from "./src/service/ai.service.js";
+// import { testAi } from "./src/service/ai.service.js";
+import { initSocket } from './src/socket/server.socket.js';
 
-testAi()
+// testAi()
+
+const httpServer = http.createServer(app)
+
+initSocket(httpServer)
 
 connectToDB();
 
-const server = app.listen(3000, () => {
+httpServer.listen(3000, () => {
   console.log("Server Started at port 3000");
 });

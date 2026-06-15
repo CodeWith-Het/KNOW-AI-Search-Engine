@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { Link, Navigate } from "react-router-dom"; // 🎯 Navigate import kiya
-import { useSelector } from "react-redux"; // 🎯 useSelector import kiya
+import { Link, Navigate } from "react-router-dom"; 
+import { useSelector } from "react-redux"; 
 import { useAuth } from "./../hook/useAuth";
 
 const Login = () => {
@@ -13,11 +13,10 @@ const Login = () => {
 
   const { loginUser } = useAuth();
 
-  // 🎯 NAYA LOGIC: Redux se user check karo
-  const user = useSelector((state) => state.auth.user);
+  const user = useSelector((state) => state.auth.user)
+  const loading = useSelector((state)=>state.auth.loading)
 
-  // Agar user pehle se login hai, toh seedha Home par bhej do!
-  if (user) {
+  if (user && !loading) {
     return <Navigate to="/" replace />;
   }
 
@@ -50,6 +49,7 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     const newErrors = validateForm();
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
