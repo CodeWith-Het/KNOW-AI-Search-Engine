@@ -7,7 +7,7 @@ const chatModelSchema = new mongoose.Schema({
         required:true
     },
     title: {
-        type: string,
+        type: String,
         default: 'New Chat',
         required:true
     }

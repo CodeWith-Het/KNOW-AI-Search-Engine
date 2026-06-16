@@ -1,7 +1,5 @@
-import { initialzeSocketConnection } from "../service/chat.service.js";
+import { initialzeSocketConnection } from './../service/chat.service';
 
 export const useChat = () => {
-    return {
-        initialzeSocketConnection
-    }
+    return {initialzeSocketConnection}
 }

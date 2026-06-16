@@ -4,7 +4,7 @@ dotenv.config();
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai"; 
 import { ChatMistralAI } from "@langchain/mistralai"
 import readline from "readline/promises";
-import { HumanMessage, SystemMessage } from "@langchain/core/messages";
+import { HumanMessage, SystemMessage, AIMessage} from "@langchain/core/messages";
 // import * as z from "zod";
 // import { tool } from "@langchain/core/tools";
 import { createAgent } from "langchain"; 
@@ -39,7 +39,7 @@ const r1 = readline.createInterface({
 
 // 🎯 model
 const geminiModel = new ChatGoogleGenerativeAI({
-  model: "gemini-2.5-flash", 
+  model: "gemini-1.5-flash-latest", 
   apiKey: process.env.GEMINI_API_KEY,
   temperature: 0.7,
 });
@@ -50,11 +50,11 @@ const mistraAiModel = new ChatMistralAI({
 })
 
 // 🎯 LangChain Agent
-const agent = createAgent({
-  model: geminiModel,
-  // tools: [emailTool, searchTool],
-  systemPrompt: "You are a smart AI agent. You have two main powers: 1. You can search the internet using the search tool to do research on any latest topic. 2. You can send emails using the email tool. Use them wisely based on user requests.",
-});
+// const agent = createAgent({
+//   model: geminiModel,
+//   // tools: [emailTool, searchTool],
+//   systemPrompt: "You are a smart AI agent. You have two main powers: 1. You can search the internet using the search tool to do research on any latest topic. 2. You can send emails using the email tool. Use them wisely based on user requests.",
+// });
 
 // testAi function
 // export const testAi = async () => {
@@ -89,16 +89,27 @@ const agent = createAgent({
 //   }
 // }
 
-export const generateResponse = async (message) => {
-  const response = await geminiModel.invoke([
-    new HumanMessage(message)
-  ])
-
-  return response.text
+export const generateResponse = async (messages) => {
+  try {
+    const response = await mistraAiModel.invoke(
+      messages
+        .map(msg => {
+          if (msg.role === "user") return new HumanMessage(msg.content);
+          if (msg.role === "ai") return new AIMessage(msg.content);
+          return null;
+        })
+        .filter(Boolean)
+    );
+    return response.content;
+  } catch (error) {
+    console.error("mistral Ai Error:", error.message);
+    throw error;
+  }
 }
 
 export const generateChatTitle = async (message) => {
-  const response = await mistraAiModel.invoke([
+  try {
+    const response = await geminiModel.invoke([
     new SystemMessage(`"are a helpful assistant that generates concise and descriptive titles for chat conversations
       
       User will provide you with the first message of a chat conversation, and you will generate a title that captures 
@@ -109,5 +120,10 @@ export const generateChatTitle = async (message) => {
      new HumanMessage(`Generate a title for a chat conversation based on the following first message:${message}`)
   ])
 
-  return response.text
+  return response.content
+  }
+  catch (error) {
+    console.log("Mistral title error: "+error.message)
+    throw error
+  }
 }

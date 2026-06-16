@@ -1,14 +1,50 @@
 import { generateChatTitle, generateResponse } from "../service/ai.service.js"
+import chatModel from './../models/chat.model.js';
+import messageModel from './../models/message.model.js';
 
 export const sendMessage = async (req, res, next) => {
-    const { message } = req.body
+    try {
+        const { message,chat:chatId } = req.body
 
-    const title = await generateChatTitle(message)
-    console.log(title)
+    let title = null, chat=null
 
-    const result = await generateResponse(message)
+    if (!chatId) {
+         title = await generateChatTitle(message)
 
-    res.json({
-        message: result
+         chat = await chatModel.create({
+            user: req.user.id,
+            title
+        })
+    }
+
+    
+    const userMessage = await messageModel.create({
+        chat: chatId || chat._id,
+        content: message,
+        role:"user"
     })
+
+    const messages = await messageModel.find({ chat: chatId } || chat._id);
+        
+    const aiResponse = await generateResponse(messages)
+
+    const aiMessage = await messageModel.create({
+        chat: chatId || chat._id,
+        content: aiResponse,
+        role:"ai"
+    })
+
+
+    res.status(201).json({
+        message: "chating successfully",
+        chat:chatId || chat._id,
+        aiMessage
+    })
+    }
+    catch (error) {
+        res.status(500).json({
+            message:"server crash",
+            error: error.message
+        })
+    }
 }
