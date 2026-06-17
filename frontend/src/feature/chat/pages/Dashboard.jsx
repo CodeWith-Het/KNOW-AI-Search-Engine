@@ -1,21 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { useChat } from '../hooks/useChat';
-import { initialzeSocketConnection } from '../service/chat.service';
+// import { useChat } from '../hooks/useChat.js';
+import { initialzeSocketConnection } from '../service/chat.socket.js';
 
 const Dashboard = () => {
 
   const [chatInput, setChatInput] = useState("")
 
-  const chat = useChat()
+  // const chat = useChat()
 
   const { user } = useSelector(state => state.auth)
 
   const userInitial = user?.username ? user.username.charAt(0).toUpperCase() : 'U';
 
-  useEffect(() => {
-    chat.initialzeSocketConnection()
-  }, [])
+  // useEffect(() => {
+  //   chat.initialzeSocketConnection()
+  // }, [])
 
   return (
     <div className="flex h-screen bg-gray-100 text-gray-800 font-sans">
