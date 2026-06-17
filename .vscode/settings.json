@@ -1,3 +1,18 @@
 {
-    "a-file-icon-vscode.folderTheme": "classic"
+  "editor.inlineSuggest.enabled": true,
+  "editor.inlineSuggest.showToolbar": "always",
+  "editor.quickSuggestions": {
+    "other": "on",
+    "comments": "on",
+    "strings": "on"
+  },
+  "editor.quickSuggestionsDelay": 0,
+  "editor.suggestOnTriggerCharacters": true,
+  "editor.acceptSuggestionOnEnter": "on",
+  "editor.tabCompletion": "on",
+  "editor.wordBasedSuggestions": "matchingDocuments",
+  "editor.suggest.preview": true,
+  "editor.suggest.showWords": true,
+  "editor.parameterHints.enabled": true,
+  "cursor.cpp.disabledLanguages": []
 }

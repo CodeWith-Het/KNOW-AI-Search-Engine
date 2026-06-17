@@ -55,6 +55,13 @@ export const getChats = async (req,res)=>{
 
         const chats = await chatModel.find({user:user})
 
+        if(chats.length == 0){
+            return res.status(404).json({
+                success:false,
+                message:"chat not found or are you new user?"
+            })
+        }
+
         res.status(200).json({
             message:"chats fetched successfully",
             chats
@@ -68,27 +75,64 @@ export const getChats = async (req,res)=>{
     }
 }
 
-export const getMessage = async (req,res)=>{
-  try{
-    const { chatId } = req.params
+export const getMessages = async (req,res)=>{
+    try {
+        const { chatid: chatId } = req.params   
+
+        if(!chatId){
+            return res.status(404).json({
+                success:false,
+                message:"Chat Not Found"
+            })
+        }
+
+        const messages = await messageModel.find({chat:chatId})
+
+        res.status(200).json({
+            success:true,
+            message:"Chat successfully fetched",
+            messages
+        })
+
+    } catch (error) {
+        res.status(500).json({
+            message:"Server crash",
+            error:error.message
+        })
+    }
+}
+
+export const deleteChat = async (req,res)=>{
+    try{
+        const {chatid:chatId} = req.params
 
     if(!chatId){
         return res.status(404).json({
+            success:false,
             message:"chat not found"
         })
     }
 
-    const messages = await messageModel.find({ chat: chatId })
+    const deletedChat = await chatModel.findByIdAndDelete(chatId)
+
+    if(!deletedChat){
+        return res.status(404).json({
+            success:false,
+            message:"chat not found"
+        })
+    }
+
+    await messageModel.deleteMany({chat:chatId})
 
     res.status(200).json({
-        message:"messages fetched successfully",
-        messages
+        success:true,
+        message:"chat successfully deleted"
     })
-  }
-  catch(error){
-    res.status(500).json({
-        message:"server crash",
-        error:error.message
-    })
-  }
+    }
+    catch(error){
+        res.status(500).json({
+            message:"server crash",
+            error:error.message
+        })
+    }
 }

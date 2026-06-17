@@ -83,16 +83,17 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center px-4 py-10">
-      <div className="w-full max-w-md rounded-[32px] border border-white/10 bg-slate-900/95 p-8 shadow-[0_24px_80px_rgba(15,23,42,0.55)] backdrop-blur-xl">
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4 py-10 font-sans">
+      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg">
+        
         <div className="mb-8 text-center">
-          <p className="inline-flex rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-white shadow-sm shadow-violet-500/20">
+          <p className="inline-flex rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-sky-600">
             Register
           </p>
-          <h1 className="mt-6 text-3xl font-semibold text-white">
+          <h1 className="mt-5 text-3xl font-bold text-gray-800">
             Create Account
           </h1>
-          <p className="mt-3 text-sm text-slate-400">
+          <p className="mt-2 text-sm text-gray-500">
             Join us today and get access to everything.
           </p>
         </div>
@@ -101,7 +102,7 @@ const Register = () => {
           <div>
             <label
               htmlFor="username"
-              className="mb-2 block text-sm font-medium text-slate-300"
+              className="mb-1 block text-sm font-medium text-gray-700"
             >
               Username
             </label>
@@ -112,17 +113,17 @@ const Register = () => {
               placeholder="Choose a username"
               value={formData.username}
               onChange={handleChange}
-              className={`w-full rounded-3xl border border-slate-800 bg-slate-950/80 px-4 py-3 text-sm text-slate-100 placeholder:text-slate-500 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-500/20 ${errors.username ? "border-rose-500 ring-rose-500/20" : ""}`}
+              className={`w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100 ${errors.username ? "border-red-500 ring-2 ring-red-100" : ""}`}
             />
             {errors.username && (
-              <p className="mt-2 text-sm text-rose-400">{errors.username}</p>
+              <p className="mt-1.5 text-sm text-red-500">{errors.username}</p>
             )}
           </div>
 
           <div>
             <label
               htmlFor="email"
-              className="mb-2 block text-sm font-medium text-slate-300"
+              className="mb-1 block text-sm font-medium text-gray-700"
             >
               Email
             </label>
@@ -133,17 +134,17 @@ const Register = () => {
               placeholder="Enter your email address"
               value={formData.email}
               onChange={handleChange}
-              className={`w-full rounded-3xl border border-slate-800 bg-slate-950/80 px-4 py-3 text-sm text-slate-100 placeholder:text-slate-500 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-500/20 ${errors.email ? "border-rose-500 ring-rose-500/20" : ""}`}
+              className={`w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100 ${errors.email ? "border-red-500 ring-2 ring-red-100" : ""}`}
             />
             {errors.email && (
-              <p className="mt-2 text-sm text-rose-400">{errors.email}</p>
+              <p className="mt-1.5 text-sm text-red-500">{errors.email}</p>
             )}
           </div>
 
           <div>
             <label
               htmlFor="password"
-              className="mb-2 block text-sm font-medium text-slate-300"
+              className="mb-1 block text-sm font-medium text-gray-700"
             >
               Password
             </label>
@@ -154,15 +155,15 @@ const Register = () => {
               placeholder="Create a strong password"
               value={formData.password}
               onChange={handleChange}
-              className={`w-full rounded-3xl border border-slate-800 bg-slate-950/80 px-4 py-3 text-sm text-slate-100 placeholder:text-slate-500 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-500/20 ${errors.password ? "border-rose-500 ring-rose-500/20" : ""}`}
+              className={`w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100 ${errors.password ? "border-red-500 ring-2 ring-red-100" : ""}`}
             />
             {errors.password && (
-              <p className="mt-2 text-sm text-rose-400">{errors.password}</p>
+              <p className="mt-1.5 text-sm text-red-500">{errors.password}</p>
             )}
           </div>
 
           {errors.submit && (
-            <div className="rounded-3xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
+            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
               {errors.submit}
             </div>
           )}
@@ -170,18 +171,18 @@ const Register = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full rounded-3xl bg-gradient-to-r from-violet-500 to-fuchsia-500 px-5 py-3 text-sm font-semibold text-white shadow-xl shadow-violet-500/20 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70"
+            className="mt-4 w-full rounded-lg bg-sky-500 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-sky-600 disabled:cursor-not-allowed disabled:opacity-70"
           >
             {isLoading ? "Creating Account..." : "Create Account"}
           </button>
         </form>
 
-        <div className="mt-8 flex flex-col gap-3 text-center text-sm text-slate-400">
+        <div className="mt-8 text-center text-sm text-gray-600">
           <p>
             Already have an account?{" "}
             <Link
               to="/login"
-              className="font-semibold text-white hover:text-violet-300"
+              className="font-semibold text-sky-500 hover:text-sky-600 hover:underline"
             >
               Sign in
             </Link>

@@ -70,16 +70,17 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center px-4 py-10">
-      <div className="w-full max-w-md rounded-[32px] border border-white/10 bg-slate-900/95 p-8 shadow-[0_24px_80px_rgba(15,23,42,0.55)] backdrop-blur-xl">
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4 py-10 font-sans">
+      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg">
+        
         <div className="mb-8 text-center">
-          <p className="inline-flex rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-white shadow-sm shadow-violet-500/20">
+          <p className="inline-flex rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-sky-600">
             Login
           </p>
-          <h1 className="mt-6 text-3xl font-semibold text-white">
+          <h1 className="mt-5 text-3xl font-bold text-gray-800">
             Welcome Back
           </h1>
-          <p className="mt-3 text-sm text-slate-400">
+          <p className="mt-2 text-sm text-gray-500">
             Sign in to your account to continue.
           </p>
         </div>
@@ -88,7 +89,7 @@ const Login = () => {
           <div>
             <label
               htmlFor="emailOrUsername"
-              className="mb-2 block text-sm font-medium text-slate-300"
+              className="mb-1 block text-sm font-medium text-gray-700"
             >
               Email or Username
             </label>
@@ -99,10 +100,10 @@ const Login = () => {
               placeholder="Enter your email or username"
               value={formData.emailOrUsername}
               onChange={handleChange}
-              className={`w-full rounded-3xl border border-slate-800 bg-slate-950/80 px-4 py-3 text-sm text-slate-100 placeholder:text-slate-500 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-500/20 ${errors.emailOrUsername ? "border-rose-500 ring-rose-500/20" : ""}`}
+              className={`w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100 ${errors.emailOrUsername ? "border-red-500 ring-2 ring-red-100" : ""}`}
             />
             {errors.emailOrUsername && (
-              <p className="mt-2 text-sm text-rose-400">
+              <p className="mt-1.5 text-sm text-red-500">
                 {errors.emailOrUsername}
               </p>
             )}
@@ -111,7 +112,7 @@ const Login = () => {
           <div>
             <label
               htmlFor="password"
-              className="mb-2 block text-sm font-medium text-slate-300"
+              className="mb-1 block text-sm font-medium text-gray-700"
             >
               Password
             </label>
@@ -122,15 +123,15 @@ const Login = () => {
               placeholder="Enter your password"
               value={formData.password}
               onChange={handleChange}
-              className={`w-full rounded-3xl border border-slate-800 bg-slate-950/80 px-4 py-3 text-sm text-slate-100 placeholder:text-slate-500 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-500/20 ${errors.password ? "border-rose-500 ring-rose-500/20" : ""}`}
+              className={`w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100 ${errors.password ? "border-red-500 ring-2 ring-red-100" : ""}`}
             />
             {errors.password && (
-              <p className="mt-2 text-sm text-rose-400">{errors.password}</p>
+              <p className="mt-1.5 text-sm text-red-500">{errors.password}</p>
             )}
           </div>
 
           {errors.submit && (
-            <div className="rounded-3xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
+            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
               {errors.submit}
             </div>
           )}
@@ -138,18 +139,18 @@ const Login = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full rounded-3xl bg-gradient-to-r from-violet-500 to-fuchsia-500 px-5 py-3 text-sm font-semibold text-white shadow-xl shadow-violet-500/20 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70"
+            className="mt-4 w-full rounded-lg bg-sky-500 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-sky-600 disabled:cursor-not-allowed disabled:opacity-70"
           >
             {isLoading ? "Signing in..." : "Sign In"}
           </button>
         </form>
 
-        <div className="mt-8 flex flex-col gap-3 text-center text-sm text-slate-400">
+        <div className="mt-8 text-center text-sm text-gray-600">
           <p>
             Don&apos;t have an account?{" "}
             <Link
               to="/register"
-              className="font-semibold text-white hover:text-violet-300"
+              className="font-semibold text-sky-500 hover:text-sky-600 hover:underline"
             >
               Sign Up 
             </Link>
@@ -160,4 +161,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Login; 
