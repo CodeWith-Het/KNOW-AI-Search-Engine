@@ -141,7 +141,7 @@ const Login = () => {
             disabled={isLoading}
             className="mt-4 w-full rounded-lg bg-sky-500 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-sky-600 disabled:cursor-not-allowed disabled:opacity-70"
           >
-            {isLoading ? "Signing in..." : "Sign In"}
+            {isLoading ? "Login in..." : "Login"}
           </button>
         </form>
 

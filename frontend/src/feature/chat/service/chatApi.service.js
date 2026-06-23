@@ -42,6 +42,8 @@ export const getMessagesApi = async (chatId) => {
 export const deleteChatApi = async (chatId) => {
     try{
         const response = await api.delete(`/delete/${chatId}`)
+
+        return response.data
     }
     catch(error){
         throw new Error(error.response?.data?.message || "Chat Not Found",{cause:error});
