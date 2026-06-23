@@ -1,9 +1,12 @@
 import { useDispatch } from 'react-redux';
 import { setActiveChatId,setLoading,setChats,setMessages,addNewMessages,setClearChat,setError } from '../chat.slice';
 import { sendMessageApi,getChatsApi,getMessagesApi,deleteChatApi } from '../service/chatApi.service';
+import { useNavigate } from 'react-router-dom';
 
 export const useChat = () => {
     const dispatch = useDispatch()
+
+    const navigate = useNavigate()
 
     const newChats = () => {
         dispatch(setClearChat()); 
@@ -14,7 +17,7 @@ export const useChat = () => {
             dispatch(setLoading(true))
 
             const response = await getChatsApi()
-            dispatch(setChats(response))
+            dispatch(setChats(response.chats || response))
         }
         catch (error) {
             dispatch(setError(error.message || "chats not fetch"))
@@ -52,9 +55,10 @@ export const useChat = () => {
 
             dispatch(addNewMessages({ role: 'ai', content: response.aiMessage.content }));
 
-            if (!currentChatId && response.chat) {
+            if (!currentChatId && response.chatId) {
                 dispatch(setActiveChatId(response.chatId));
                 fetchAllChats(); 
+                navigate(`/chat/${response.chatId}`);
             }
         } catch (error) {
             dispatch(setError(error.message || "message not send"))

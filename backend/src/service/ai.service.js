@@ -5,11 +5,11 @@ import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { ChatMistralAI } from "@langchain/mistralai"
 import readline from "readline/promises";
 import { HumanMessage, SystemMessage, AIMessage} from "@langchain/core/messages";
-// import * as z from "zod";
-// import { tool } from "@langchain/core/tools";
-import { createAgent } from "langchain"; 
-// import { TavilySearch } from "@langchain/tavily";
+import * as z from "zod";
+import { tool } from "@langchain/core/tools";
+import { createAgent } from "langchain";
 // import { sendmail } from "./mail.service.js";
+import { searchInternet } from './internet.service.js';
 
 const r1 = readline.createInterface({
   input: process.stdin,
@@ -33,13 +33,10 @@ const r1 = readline.createInterface({
 // );
 
 // 🎯 Search Tool
-// const searchTool = new TavilySearch({
-//   maxResults: 2,
-// });
-
+const searchInternetTool = tool()
 // 🎯 model
 const geminiModel = new ChatGoogleGenerativeAI({
-  model: "gemini-2.5-flash", 
+  model: "gemini-2.5-flash-lite", 
   apiKey: process.env.GEMINI_API_KEY,
   temperature: 0.7,
 });
@@ -126,9 +123,7 @@ export const generateChatTitle = async (message) => {
   return response.content
   }
   catch (error) {
-    let fallbackTitle = message.substring(0, 30);
-    if (message.length > 30) fallbackTitle += "...";
-    
-    return fallbackTitle;
+    console.error("Mistral Ai Error:", error.message);
+    throw error;
   }
 }

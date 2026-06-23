@@ -5,33 +5,31 @@ import messageModel from './../models/message.model.js';
 export const sendMessage = async (req, res) => {
     try {
         const { message, chat: chatId } = req.body
-        let currentChatId = chatId
-        let newChatData = null;
 
-    if (!currentChatId) {
+    let createdChatId = chatId
+
+    if (!chatId) {
          const title = await generateChatTitle(message)
 
-         newChatData = await chatModel.create({
-            user: req.user._id,
-            title: generateChatTitle
+         const newChatData = await chatModel.create({
+            user: req.user.id,
+            title:title
          })
-        
-        currentChatId = newChatData._id
+         createdChatId = newChatData._id
     }
-
-    
+        
     const userMessage = await messageModel.create({
-        chat: chatId || chat._id,
+        chat: createdChatId,
         content: message,
         role:"user"
     })
 
-    const messages = await messageModel.find({ chat: chatId || chat._id });
+    const messages = await messageModel.find({ chat: createdChatId });
         
     const aiResponse = await generateResponse(messages)
 
     const aiMessage = await messageModel.create({
-        chat: chatId || chat._id,
+        chat: createdChatId,
         content: aiResponse,
         role:"ai"
     })
@@ -39,7 +37,7 @@ export const sendMessage = async (req, res) => {
 
     res.status(200).json({
         message: "chating successfully",
-        chat:newChatData,
+        chatId: createdChatId,
         aiMessage
     })
     }
@@ -55,12 +53,13 @@ export const getChats = async (req,res)=>{
     try{
         const user = req.user.id
 
-        const chats = await chatModel.find({user:user})
+        const chats = await chatModel.find({user:user}).sort({createdAt:-1})
 
         if(chats.length == 0){
-            return res.status(404).json({
+            return res.status(200).json({
                 success:false,
-                message:"chat not found or are you new user?"
+                message: "chat not found. Welcome New User",
+                chats:[]
             })
         }
 

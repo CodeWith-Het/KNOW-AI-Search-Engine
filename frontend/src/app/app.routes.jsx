@@ -33,6 +33,16 @@ export const router = createBrowserRouter([
         </Chatwrapper>
       </Protected>
     ),
+    children: [
+      {
+      index:true,
+      element:<Dashboard />
+      },
+      {
+        path: "/chat/:id",
+        element:<Dashboard />
+      }
+  ],
   },
   {
     path: "/dashboard",

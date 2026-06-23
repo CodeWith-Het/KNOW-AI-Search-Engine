@@ -1,16 +1,19 @@
 import React, { useEffect } from 'react';
+import { initialzeSocketConnection } from "../service/chat.socket.js";
 import { useChat } from '../hooks/useChat';
+import { Outlet } from 'react-router-dom';
 
-const Chatwrapper = ({children}) => {
+const Chatwrapper = () => {
 
     const { fetchAllChats } = useChat()
     
-    useEffect(() => {
-      fetchAllChats
+  useEffect(() => {
+      initialzeSocketConnection(),
+      fetchAllChats()
     }, [])
     
 
-  return children
+  return <Outlet />
 }
 
 export default Chatwrapper;
