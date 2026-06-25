@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { useChat } from "../hooks/useChat.js";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm"; // 🎯 1. Yahan remark-gfm import kiya
 import { useNavigate, useParams } from "react-router-dom";
 
 const Dashboard = () => {
@@ -227,7 +228,10 @@ const Dashboard = () => {
                       msg.content
                     ) : (
                       <div className="prose prose-sm max-w-none text-gray-800 overflow-x-auto">
-                        <ReactMarkdown>{msg.content}</ReactMarkdown>
+                        {/* 🎯 2. Yahan remarkPlugins lagaya */}
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {msg.content}
+                        </ReactMarkdown>
                       </div>
                     )}
                   </div>

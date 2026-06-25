@@ -6,10 +6,11 @@ const tavily = Tavily({
     
 export const searchInternet = async (query) => {
     try {
-        return await tavily.search(query, {
-            maxResults: 5,
+        const result =  await tavily.search(query, {
+            maxResults: 3,
             searchDepth: "advanced",
         });
+        return JSON.stringify(result);
     } catch (error) {
         console.error("Error searching Tavily:", error);
         throw error;

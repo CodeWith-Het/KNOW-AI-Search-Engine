@@ -33,10 +33,22 @@ const r1 = readline.createInterface({
 // );
 
 // 🎯 Search Tool
-const searchInternetTool = tool()
+const searchInternetTool = tool(
+  async ({ query }) => {
+    return await searchInternet(query); 
+  },
+  {
+    name: "searchInternetTool",
+    description: "Use this tool to get the latest internet from the internet",
+    schema: z.object({
+      query: z.string().describe("The search query string"),
+    }),
+  }
+);
+
 // 🎯 model
 const geminiModel = new ChatGoogleGenerativeAI({
-  model: "gemini-2.5-flash-lite", 
+  model: "gemini-2.5-flash", 
   apiKey: process.env.GEMINI_API_KEY,
   temperature: 0.7,
 });
@@ -46,12 +58,12 @@ const mistraAiModel = new ChatMistralAI({
   apiKey:process.env.MISTRAL_API_KEY
 })
 
-// 🎯 LangChain Agent
-// const agent = createAgent({
-//   model: geminiModel,
-//   // tools: [emailTool, searchTool],
-//   systemPrompt: "You are a smart AI agent. You have two main powers: 1. You can search the internet using the search tool to do research on any latest topic. 2. You can send emails using the email tool. Use them wisely based on user requests.",
-// });
+// 🎯 Agent
+const agent = createAgent({
+  model: mistraAiModel,
+  tools: [searchInternetTool],
+  systemPrompt: "You are a smart AI agent. You have one main power: You can search the internet using the search tool to do research on any latest topic. Use it wisely based on user requests.",
+})
 
 // testAi function
 // export const testAi = async () => {
@@ -88,16 +100,18 @@ const mistraAiModel = new ChatMistralAI({
 
 export const generateResponse = async (messages) => {
   try {
-    const response = await geminiModel.invoke(
-      messages
-        .map(msg => {
+    const response = await agent.invoke({
+      systemPrompt: "You are a smart AI agent. You have one main power: You can search the internet using the search tool to do research on any latest topic. Use it wisely based on user requests.",
+      messages: messages
+        .map((msg) => {
           if (msg.role === "user") return new HumanMessage(msg.content);
           if (msg.role === "ai") return new AIMessage(msg.content);
           return null;
         })
-        .filter(Boolean)
-    );
-    return response.content;
+        .filter(Boolean),
+    });
+
+    return response.messages[response.messages.length - 1].content;
   } catch (error) {
     console.error("gemini Ai Error:", error.message);
     throw error;
@@ -107,7 +121,7 @@ export const generateResponse = async (messages) => {
 export const generateChatTitle = async (message) => {
   try {
     const response = await mistraAiModel.invoke([
-    new SystemMessage(`are a helpful assistant that generates concise and descriptive titles for chat conversations
+    new SystemMessage(`You are a helpful assistant that generates concise and descriptive titles for chat conversations
       
       User will provide you with the first message of a chat conversation, and you will generate a title that captures 
       the essence of the conversation in 2-4 words. The title should be clear, relevant, and engaging, giving
@@ -118,9 +132,7 @@ export const generateChatTitle = async (message) => {
     ])
     let cleanTitle = response.content.replace(/["']/g, "").trim();
     
-    return cleanTitle;
-
-  return response.content
+    return cleanTitle
   }
   catch (error) {
     console.error("Mistral Ai Error:", error.message);
