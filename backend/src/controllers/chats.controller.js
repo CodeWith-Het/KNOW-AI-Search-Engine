@@ -1,3 +1,4 @@
+import { success } from "zod";
 import { generateChatTitle, generateResponse } from "../service/ai.service.js"
 import chatModel from './../models/chat.model.js';
 import messageModel from './../models/message.model.js';
@@ -57,7 +58,7 @@ export const getChats = async (req,res)=>{
 
         if(chats.length == 0){
             return res.status(200).json({
-                success:false,
+                success:true,
                 message: "chat not found. Welcome New User",
                 chats:[]
             })
