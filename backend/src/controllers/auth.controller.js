@@ -122,7 +122,7 @@ export const verifyEmailUrl = async (req, res, next) => {
     user.isVerified = true;
     await user.save();
 
-    const frontendLoginUrl = `${process.env.FRONTEND_URL}/auth/login`;
+    const frontendLoginUrl = `${process.env.FRONTEND_URL}/login`;
 
     const html = `
     <div style="text-align: center; margin-top: 50px; font-family: sans-serif; background-color: #f9fafb; padding: 40px;">
