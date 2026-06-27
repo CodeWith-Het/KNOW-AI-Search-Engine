@@ -6,7 +6,8 @@ import nodemailer from "nodemailer";
 const createTransporter = async () => {
   try {
     const transporter = nodemailer.createTransport({
-      service:"gmail",
+      service: "gmail",
+      family: 4,
         auth: {
         user: process.env.GOOGLE_USER,
         pass:process.env.GOOGLE_APP_PASSWORD
