@@ -32,7 +32,7 @@ export const registerUser = async (req, res, next) => {
     );
 
 
-    const verificationUrl = `http://localhost:3000/api/auth/verify-email?token=${emailVerificationToken}`;
+    const verificationUrl = `${import.meta.env.VITE_API_URL}/api/auth/verify-email?token=${emailVerificationToken}`;
 
     const emailHtmlTemplate = `
         <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px;">
@@ -117,7 +117,7 @@ export const verifyEmailUrl = async (req, res, next) => {
     user.isVerified = true;
     await user.save();
 
-    const frontendLoginUrl = "http://localhost:3000/api/auth/login";
+    const frontendLoginUrl = `${import.meta.env.VITE_API_URL}/api/auth/login`;
 
     const html = `
     <div style="text-align: center; margin-top: 50px; font-family: sans-serif; background-color: #f9fafb; padding: 40px;">
