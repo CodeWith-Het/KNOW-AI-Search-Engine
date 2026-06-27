@@ -16,7 +16,10 @@ app.use(express.json())
 app.use(cookieParser())
 app.use(morgan("dev"))
 app.use(cors({
-    origin: process.env.FRONTEND_URL,
+    origin: [
+        "http://localhost:5173",
+        "https://perplexity-ai-umber.vercel.app"
+    ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE"]
 }));
