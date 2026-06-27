@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { useChat } from "../hooks/useChat.js";
+import { useAuth } from "../../auth/hook/useAuth.js";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm"; // 🎯 1. Yahan remark-gfm import kiya
 import { useNavigate, useParams } from "react-router-dom";
@@ -18,6 +19,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
 
   const { newChats, loadMessages, sendMessage, deleteChat } = useChat();
+  const { logoutUser } = useAuth();
 
   const userInitial = user?.username
     ? user.username.charAt(0).toUpperCase()
@@ -160,13 +162,29 @@ const Dashboard = () => {
         </div>
 
         {/* Bottom: User Profile */}
-        <div className="p-4 border-t border-gray-200 flex items-center gap-3 cursor-pointer hover:bg-gray-50 transition-colors">
-          <div className="w-9 h-9 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center font-bold text-sm border border-sky-200">
-            {userInitial}
+        <div className="p-4 border-t border-gray-200 space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center font-bold text-sm border border-sky-200">
+              {userInitial}
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-700">{user.username}</p>
+              <p className="text-xs text-gray-500 truncate">{user.email}</p>
+            </div>
           </div>
-          <span className="text-sm font-semibold text-gray-700">
-            {user.username}
-          </span>
+          <button
+            onClick={async () => {
+              try {
+                await logoutUser();
+                navigate("/login");
+              } catch (logoutError) {
+                console.error(logoutError);
+              }
+            }}
+            className="w-full rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white hover:bg-red-600 transition"
+          >
+            Logout
+          </button>
         </div>
       </aside>
 

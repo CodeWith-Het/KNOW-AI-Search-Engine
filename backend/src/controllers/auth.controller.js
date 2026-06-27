@@ -56,12 +56,17 @@ export const registerUser = async (req, res, next) => {
         html: emailHtmlTemplate,
       });
     } catch (emailError) {
-      console.log(emailError)
+      console.error("Failed to send verification email:", emailError);
+      await user.deleteOne();
+      return res.status(500).json({
+        success: false,
+        message: "Unable to send verification email. Please try again later.",
+      });
     }
 
     res.status(201).json({
       success: true,
-      message: "User Successfully Registered. Please verify your email.",
+      message: "User successfully registered. Please verify your email before login.",
       user: {
         id: user._id,
         username: user.username,
@@ -117,7 +122,7 @@ export const verifyEmailUrl = async (req, res, next) => {
     user.isVerified = true;
     await user.save();
 
-    const frontendLoginUrl = `${process.env.FRONTEND_URL}/api/auth/login`;
+    const frontendLoginUrl = `${process.env.FRONTEND_URL}/login`;
 
     const html = `
     <div style="text-align: center; margin-top: 50px; font-family: sans-serif; background-color: #f9fafb; padding: 40px;">
@@ -130,12 +135,11 @@ export const verifyEmailUrl = async (req, res, next) => {
            <a href="${frontendLoginUrl}" style="background-color: #4F46E5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 20px; font-weight: bold;">
               Go to Login
             </a>
-            </a>
           </div>
       </div>
     `;
 
-    res.send(html)
+    res.status(200).send(html);
   } catch (error) {
     next(error);
   }
@@ -167,6 +171,13 @@ export const loginUser = async (req, res, next) => {
       });
     }
 
+    if (!user.isVerified) {
+      return res.status(403).json({
+        success: false,
+        message: "Email not verified. Please verify your account before logging in.",
+      });
+    }
+
     const token = jwt.sign(
       {
         id: user._id,
@@ -191,6 +202,7 @@ export const loginUser = async (req, res, next) => {
         id: user._id,
         username: user.username,
         email: user.email,
+        isVerified: user.isVerified,
       },
     });
   } catch (error) {
@@ -220,7 +232,8 @@ export const getUser = async (req, res, next) => {
     user: {
       id: user._id,
       username: user.username,
-      email:user.email
+      email: user.email,
+      isVerified: user.isVerified,
     }
   })
   }

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../hook/useAuth";
 import { useSelector } from "react-redux";
 
@@ -10,9 +10,11 @@ const Register = () => {
     password: "",
   });
   const [errors, setErrors] = useState({});
+  const [successMessage, setSuccessMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const { registerUser } = useAuth()
+  const { registerUser } = useAuth();
+  const navigate = useNavigate();
   
   const user = useSelector((state) => state.auth.user)
   const loading = useSelector((state) => state.auth.loading)
@@ -73,8 +75,13 @@ const Register = () => {
       await registerUser({
         username: formData.username,
         email: formData.email,
-        password:formData.password
-      })
+        password: formData.password,
+      });
+      setSuccessMessage("Registration successful. Please check your inbox to verify your email before logging in.");
+      setFormData({ username: "", email: "", password: "" });
+      setTimeout(() => {
+        navigate("/login");
+      }, 1000);
     } catch (error) {
       setErrors({ submit: error.message });
     } finally {
@@ -165,6 +172,11 @@ const Register = () => {
           {errors.submit && (
             <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
               {errors.submit}
+            </div>
+          )}
+          {successMessage && (
+            <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-600">
+              {successMessage}
             </div>
           )}
 

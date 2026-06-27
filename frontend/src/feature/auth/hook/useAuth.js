@@ -1,59 +1,72 @@
 import { useDispatch } from 'react-redux';
-import { register, login, getUser } from './../service/auth.api.js'
-import {setUser,setLoading,setError} from "./../auth.slice.js"
+import { register, login, getUser, logout } from './../service/auth.api.js';
+import { setUser, setLoading, setError } from './../auth.slice.js';
 
 export const useAuth = () => {
-    const dispatch = useDispatch()
-    
+    const dispatch = useDispatch();
+
     const registerUser = async ({ username, email, password }) => {
         try {
-            dispatch(setLoading(true))
+            dispatch(setLoading(true));
 
-            const response = await register({ username, email, password })
-            dispatch(setUser(response))
+            const response = await register({ username, email, password });
+            return response;
+        } catch (error) {
+            dispatch(setError(error.message));
+            throw error;
+        } finally {
+            dispatch(setLoading(false));
         }
-        catch (error) {
-            dispatch(setError(error.message))
-            throw error
-        }
-        finally {
-            dispatch(setLoading(false))
-        }
-    }
+    };
 
     const loginUser = async ({ loginId, password }) => {
         try {
-            dispatch(setLoading(true))
+            dispatch(setLoading(true));
 
-            const response = await login({ loginId, password })
-            dispatch(setUser(response))
+            const user = await login({ loginId, password });
+            dispatch(setUser(user));
+            return user;
+        } catch (error) {
+            dispatch(setError(error.message));
+            throw error;
+        } finally {
+            dispatch(setLoading(false));
         }
-        catch (error) {
-            dispatch(setError(error.message))
-            throw error
-        }
-        finally {
-            dispatch(setLoading(false))
-        }
-    }
+    };
 
     const getUserDetails = async () => {
         try {
-            dispatch(setLoading(true))
+            dispatch(setLoading(true));
 
-            const response = await getUser()
-            dispatch(setUser(response))
+            const user = await getUser();
+            dispatch(setUser(user));
+            return user;
+        } catch (error) {
+            dispatch(setError(error.message));
+            dispatch(setUser(null));
+            throw error;
+        } finally {
+            dispatch(setLoading(false));
         }
-        catch (error) {
-            dispatch(setError(error.message))
-            throw error
+    };
+
+    const logoutUser = async () => {
+        try {
+            dispatch(setLoading(true));
+            await logout();
+            dispatch(setUser(null));
+        } catch (error) {
+            dispatch(setError(error.message));
+            throw error;
+        } finally {
+            dispatch(setLoading(false));
         }
-        finally {
-            dispatch(setLoading(false))
-        }
-    }
+    };
 
     return {
-    registerUser, loginUser, getUserDetails
-    }
-}
+        registerUser,
+        loginUser,
+        getUserDetails,
+        logoutUser,
+    };
+};
