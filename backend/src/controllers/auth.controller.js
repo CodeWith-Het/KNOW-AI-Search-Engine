@@ -117,7 +117,7 @@ export const verifyEmailUrl = async (req, res, next) => {
     user.isVerified = true;
     await user.save();
 
-    const frontendLoginUrl = `${process.env.API_URL}/api/auth/login`;
+    const frontendLoginUrl = `${process.env.FRONTEND_URL}/api/auth/login`;
 
     const html = `
     <div style="text-align: center; margin-top: 50px; font-family: sans-serif; background-color: #f9fafb; padding: 40px;">
@@ -141,21 +141,20 @@ export const verifyEmailUrl = async (req, res, next) => {
   }
 };
 
-export const loginUser =async (req,res,next) => {
+export const loginUser = async (req, res, next) => {
   try {
     const { loginId, password } = req.body;
 
     const user = await userModel
       .findOne({
-        $or: [{ username:loginId }, { email:loginId }],
+        $or: [{ username: loginId }, { email: loginId }],
       })
       .select("+password");
 
     if (!user) {
       return res.status(400).json({
         success: false,
-        message: "User not found , please provide right information",
-        error: "User not found",
+        message: "User not found",
       });
     }
 
@@ -164,8 +163,7 @@ export const loginUser =async (req,res,next) => {
     if (!isPasswordMatch) {
       return res.status(401).json({
         success: false,
-        message: "Invalid password, please provide right password",
-        error: "Invaild Password",
+        message: "Invalid password",
       });
     }
 
@@ -174,25 +172,31 @@ export const loginUser =async (req,res,next) => {
         id: user._id,
       },
       process.env.JWT_SECRET,
-      { expiresIn: "2d" },
+      {
+        expiresIn: "2d",
+      }
     );
 
-   res.cookie("token",token)
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      maxAge: 2 * 24 * 60 * 60 * 1000,
+    });
 
     res.status(200).json({
       success: true,
-      message: "User successfully Login",
+      message: "User successfully logged in",
       user: {
         id: user._id,
         username: user.username,
-        email:user.email
-      }
-    });  
- }
-  catch (error) {
-    next(error)
+        email: user.email,
+      },
+    });
+  } catch (error) {
+    next(error);
   }
-}
+};
 
 export const getUser = async (req, res, next) => {
   try {
@@ -225,31 +229,30 @@ export const getUser = async (req, res, next) => {
   }
 }
 
-export const logoutUser = async(req,res,next) => {
+export const logoutUser = async (req, res, next) => {
   try {
-    const token = req.cookies.token;
+    const token = req.cookies?.token;
 
     if (token) {
       await redis.set(
         `blacklist:${token}`,
         "true",
         "EX",
-        3 * 24 * 60 * 60, // 3 days in seconds
+        2 * 24 * 60 * 60
       );
     }
 
     res.clearCookie("token", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     });
 
     res.status(200).json({
       success: true,
-      message: "User successfully logout",
-    })
+      message: "User successfully logged out",
+    });
+  } catch (error) {
+    next(error);
   }
-  catch (error) {
-    next(error)
-  }
-}
+};

@@ -8,15 +8,13 @@ export const authUser = async (req, res, next) => {
   const token = req.cookies?.token;
 
   if (!token) {
-    return res.status(400).json({
-      message: "token not provide , get Loign",
+    return res.status(401).json({
       success: false,
-      error: "token not provide",
+      message: "Please login first",
     });
   }
 
-  // blacklist
-  const isBlacklisted = await redis.get(`bl_${token}`);
+  const isBlacklisted = await redis.get(`blacklist:${token}`);
 
   if (isBlacklisted) {
     return res.status(401).json({
@@ -25,20 +23,18 @@ export const authUser = async (req, res, next) => {
     });
   }
 
-  let decoded = null;
-
   try {
-    decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
     req.user = decoded;
+
     next();
   } catch (error) {
-    // this is errro show
-    console.log("🚨 JWT VERIFY ERROR:", error.message);
-    
+    console.log("JWT ERROR:", error.message);
+
     return res.status(401).json({
-      message: "invalid token , please login again",
       success: false,
-      error: "Invalid token",
+      message: error.message,
     });
   }
 };
