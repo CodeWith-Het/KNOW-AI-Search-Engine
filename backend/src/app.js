@@ -15,11 +15,7 @@ const app = express();
 app.use(express.json())
 app.use(cookieParser())
 app.use(morgan("dev"))
-app.use(cors({
-    origin: "*",
-    credentials: true,
-    methods:["PUT","GET","POST","DELETE"]
-}))
+app.use(cors());
 
 // routers
 app.use("/api/auth", authRouter)
