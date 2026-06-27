@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "echo \"Skip building..\"",
+    "build": "npm i --force && echo \"Skip building..\"",
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "npx nodemon server.js"
   },
