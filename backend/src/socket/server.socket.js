@@ -7,7 +7,7 @@ export const initSocket = (httpServer)=>{
         cors: {
             origin: [
                 "http://localhost:5173",
-                "https://perplexity-luwmxjfqy-hetp1065-1813s-projects.vercel.app"
+                "https://perplexity-ai-umber.vercel.app"
             ],
             credentials: true
         }

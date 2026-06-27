@@ -18,10 +18,10 @@ app.use(morgan("dev"))
 app.use(cors({
     origin: [
         "http://localhost:5173",
-        "https://perplexity-ai-umber.vercel.app"
+        "https://perplexity-ai-umber.vercel.app/"
     ],
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE"]
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true
 }));
 
 // routers
