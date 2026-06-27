@@ -15,55 +15,40 @@ const Register = () => {
 
   const { registerUser } = useAuth();
   const navigate = useNavigate();
-  
-  const user = useSelector((state) => state.auth.user)
-  const loading = useSelector((state) => state.auth.loading)
-  
+
+  const user = useSelector((state) => state.auth.user);
+  const loading = useSelector((state) => state.auth.loading);
+
+  // Agar pehle se logged in hai, toh dashboard bhej do
   if (user && !loading) {
-    return <Navigate to="/login" replace />
+    return <Navigate to="/" replace />;
   }
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-    if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: "",
-      }));
-    }
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const validateForm = () => {
     const newErrors = {};
-
-    if (!formData.username.trim()) {
-      newErrors.username = "Username is required";
-    } else if (formData.username.length < 3) {
+    if (!formData.username.trim()) newErrors.username = "Username is required";
+    else if (formData.username.length < 3)
       newErrors.username = "Username must be at least 3 characters";
-    }
 
-    if (!formData.email.trim()) {
-      newErrors.email = "Email is required";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email address";
-    }
+    if (!formData.email.trim()) newErrors.email = "Email is required";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
+      newErrors.email = "Invalid email address";
 
-    if (!formData.password) {
-      newErrors.password = "Password is required";
-    } else if (formData.password.length < 6) {
+    if (!formData.password) newErrors.password = "Password is required";
+    else if (formData.password.length < 6)
       newErrors.password = "Password must be at least 6 characters";
-    }
 
     return newErrors;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const newErrors = validateForm();
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -71,17 +56,20 @@ const Register = () => {
     }
 
     setIsLoading(true);
+    setErrors({});
     try {
       await registerUser({
         username: formData.username,
         email: formData.email,
         password: formData.password,
       });
-      setSuccessMessage("Registration successful. Please check your inbox to verify your email before logging in.");
+      setSuccessMessage(
+        "Registration successful! Please check your email to verify before logging in.",
+      );
       setFormData({ username: "", email: "", password: "" });
-      setTimeout(() => {
-        navigate("/login");
-      }, 1000);
+
+      // 2 seconds rukenge taki user msg padh sake
+      setTimeout(() => navigate("/login"), 2000);
     } catch (error) {
       setErrors({ submit: error.message });
     } finally {
@@ -90,16 +78,10 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4 py-10 font-sans">
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg">
-        
         <div className="mb-8 text-center">
-          <p className="inline-flex rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-sky-600">
-            Register
-          </p>
-          <h1 className="mt-5 text-3xl font-bold text-gray-800">
-            Create Account
-          </h1>
+          <h1 className="text-3xl font-bold text-gray-800">Create Account</h1>
           <p className="mt-2 text-sm text-gray-500">
             Join us today and get access to everything.
           </p>
@@ -107,99 +89,85 @@ const Register = () => {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label
-              htmlFor="username"
-              className="mb-1 block text-sm font-medium text-gray-700"
-            >
+            <label className="mb-1 block text-sm font-medium text-gray-700">
               Username
             </label>
             <input
               type="text"
-              id="username"
               name="username"
               placeholder="Choose a username"
               value={formData.username}
               onChange={handleChange}
-              className={`w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100 ${errors.username ? "border-red-500 ring-2 ring-red-100" : ""}`}
+              className={`w-full rounded-lg border p-2.5 text-sm outline-none focus:ring-2 ${errors.username ? "border-red-500" : "border-gray-300"}`}
             />
             {errors.username && (
-              <p className="mt-1.5 text-sm text-red-500">{errors.username}</p>
+              <p className="mt-1 text-xs text-red-500">{errors.username}</p>
             )}
           </div>
 
           <div>
-            <label
-              htmlFor="email"
-              className="mb-1 block text-sm font-medium text-gray-700"
-            >
+            <label className="mb-1 block text-sm font-medium text-gray-700">
               Email
             </label>
             <input
               type="email"
-              id="email"
               name="email"
-              placeholder="Enter your email address"
+              placeholder="Enter your email"
               value={formData.email}
               onChange={handleChange}
-              className={`w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100 ${errors.email ? "border-red-500 ring-2 ring-red-100" : ""}`}
+              className={`w-full rounded-lg border p-2.5 text-sm outline-none focus:ring-2 ${errors.email ? "border-red-500" : "border-gray-300"}`}
             />
             {errors.email && (
-              <p className="mt-1.5 text-sm text-red-500">{errors.email}</p>
+              <p className="mt-1 text-xs text-red-500">{errors.email}</p>
             )}
           </div>
 
           <div>
-            <label
-              htmlFor="password"
-              className="mb-1 block text-sm font-medium text-gray-700"
-            >
+            <label className="mb-1 block text-sm font-medium text-gray-700">
               Password
             </label>
             <input
               type="password"
-              id="password"
               name="password"
               placeholder="Create a strong password"
               value={formData.password}
               onChange={handleChange}
-              className={`w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100 ${errors.password ? "border-red-500 ring-2 ring-red-100" : ""}`}
+              className={`w-full rounded-lg border p-2.5 text-sm outline-none focus:ring-2 ${errors.password ? "border-red-500" : "border-gray-300"}`}
             />
             {errors.password && (
-              <p className="mt-1.5 text-sm text-red-500">{errors.password}</p>
+              <p className="mt-1 text-xs text-red-500">{errors.password}</p>
             )}
           </div>
 
           {errors.submit && (
-            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+            <p className="text-sm text-red-600 bg-red-50 p-2 rounded">
               {errors.submit}
-            </div>
+            </p>
           )}
           {successMessage && (
-            <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-600">
+            <p className="text-sm text-green-600 bg-green-50 p-2 rounded">
               {successMessage}
-            </div>
+            </p>
           )}
 
           <button
             type="submit"
             disabled={isLoading}
-            className="mt-4 w-full rounded-lg bg-sky-500 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-sky-600 disabled:cursor-not-allowed disabled:opacity-70"
+            className="w-full rounded-lg bg-sky-500 py-2.5 text-sm font-semibold text-white hover:bg-sky-600 disabled:opacity-70"
           >
-            {isLoading ? "Creating Account..." : "Create Account"}
+            {isLoading ? "Processing..." : "Create Account"}
           </button>
         </form>
 
-        <div className="mt-8 text-center text-sm text-gray-600">
-          <p>
-            Already have an account?{" "}
-            <Link
-              to="/login"
-              className="font-semibold text-sky-500 hover:text-sky-600 hover:underline"
-            >
-              Sign in
-            </Link>
-          </p>
-        </div>
+        <p className="mt-6 text-center text-sm text-gray-600">
+          Already have an account?{" "}
+          <Link
+            to="/login"
+            className="font-semibold text-sky-500 hover:underline"
+          >
+            Sign in
+          </Link>
+        </p>
       </div>
     </div>
   );

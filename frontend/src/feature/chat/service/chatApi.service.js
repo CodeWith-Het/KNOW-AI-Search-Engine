@@ -1,51 +1,42 @@
-import axios from "axios"
+import axios from "axios";
 
 const api = axios.create({
-    baseURL:`${import.meta.env.VITE_API_URL}/api/chats`,
-    withCredentials:true
-})
+    baseURL: `${import.meta.env.VITE_API_URL}/api/auth`,
+    withCredentials: true,
+});
 
-export const sendMessageApi = async ({message,chat:chatId}) =>{
-    try{
-        const response = await api.post("/message",{message,chat:chatId})
+export const register = async ({ username, email, password }) => {
+    try {
+        const response = await api.post("/register", { username, email, password });
+        return response.data;
+    } catch (error) {
+        throw new Error(error.response?.data?.message || "Registration Failed", { cause: error });
+    }
+};
 
-        return response.data
+export const login = async ({ loginId, password }) => {
+    try {
+        const response = await api.post("/login", { loginId, password });
+        return response.data.user;
+    } catch (error) {
+        throw new Error(error.response?.data?.message || "Login Failed", { cause: error });
     }
-    catch(error){
-        throw new Error(error.response?.data?.message || "Not send message",{cause:error});
-    }
-}
+};
 
-export const getChatsApi = async () =>{
-    try{
-        const response = await api.get("/")
+export const getUser = async () => {
+    try {
+        const response = await api.get("/getuser");
+        return response.data.user;
+    } catch (error) {
+        throw new Error(error.response?.data?.message || "User not retrieved", { cause: error });
+    }
+};
 
-        return response.data
+export const logout = async () => {
+    try {
+        const response = await api.get("/logout");
+        return response.data;
+    } catch (error) {
+        throw new Error(error.response?.data?.message || "Logout Failed", { cause: error });
     }
-    catch(error){
-        throw new Error(error.response?.data?.message || "Get not message",{cause:error});
-        
-    }
-}
-
-export const getMessagesApi = async (chatId) => {
-    try{
-        const response = await api.get(`/${chatId}/messages`)
-
-        return response.data
-    }
-    catch(error){
-        throw new Error(error.response?.data?.message || "Message not fetched",{cause:error});
-    }
-}
-
-export const deleteChatApi = async (chatId) => {
-    try{
-        const response = await api.delete(`/delete/${chatId}`)
-
-        return response.data
-    }
-    catch(error){
-        throw new Error(error.response?.data?.message || "Chat Not Found",{cause:error});
-    }
-}
+};

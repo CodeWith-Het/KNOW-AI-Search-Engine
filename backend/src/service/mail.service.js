@@ -6,10 +6,8 @@ import nodemailer from "nodemailer";
 const createTransporter = async () => {
   try {
     const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 465,
-      secure:true,
-      auth: {
+      service:"gmail",
+        auth: {
         user: process.env.GOOGLE_USER,
         pass:process.env.GOOGLE_APP_PASSWORD
       },
@@ -33,6 +31,7 @@ export const sendmail = async ({ to, subject, html }) => {
       from: process.env.GOOGLE_USER, 
       to,
       subject,
+      text,
       html,
     };
 
