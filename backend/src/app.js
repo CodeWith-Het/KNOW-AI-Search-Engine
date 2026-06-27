@@ -15,7 +15,10 @@ const app = express();
 app.use(express.json())
 app.use(cookieParser())
 app.use(morgan("dev"))
-app.use(cors());
+app.use(cors({
+    origin: "*",
+    methods:["PUT","GET","POST","DELETE"]
+}))
 
 // routers
 app.use("/api/auth", authRouter)
