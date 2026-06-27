@@ -8,20 +8,18 @@ import { google } from "googleapis";
 const OAuth2 = google.auth.OAuth2;
 
 const createTransporter = async () => {
-  try {
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.GOOGLE_USER,
-        pass:process.env.GOOGLE_APP_PASSWORD
-      },
-    });
+ try {
+  await sendmail(...);
+} catch (emailError) {
+  console.error("Failed to send verification email:", emailError);
 
-    return transporter;
-  } catch (error) {
-    console.error("Transporter creation error: ", error);
-    throw error;
-  }
+  await user.deleteOne();
+
+  return res.status(500).json({
+    success: false,
+    message: "Unable to send verification email. Please try again later.",
+  });
+}
 };
 
 export const sendmail = async ({ to, subject, html }) => {
