@@ -1,7 +1,10 @@
 import dotenv from "dotenv";
 dotenv.config();
 
+import dns from "dns"
 import nodemailer from "nodemailer";
+
+dns.setDefaultResultOrder('ipv4first');
 
 const createTransporter = async () => {
   try {
