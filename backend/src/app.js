@@ -16,9 +16,13 @@ app.use(express.json())
 app.use(cookieParser())
 app.use(morgan("dev"))
 app.use(cors({
-    origin: "*",
-    methods:["PUT","GET","POST","DELETE"]
-}))
+    origin: [
+        "http://localhost:5173",
+        "https://perplexity-luwmxjfqy-hetp1065-1813s-projects.vercel.app"
+    ],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE"]
+}));
 
 // routers
 app.use("/api/auth", authRouter)
