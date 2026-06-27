@@ -10,7 +10,8 @@ const OAuth2 = google.auth.OAuth2;
 const createTransporter = async () => {
   try {
     const transporter = nodemailer.createTransport({
-      service: "gmail",
+      host: "smtp.gmail.com",
+      port: 587,
       auth: {
         user: process.env.GOOGLE_USER,
         pass:process.env.GOOGLE_APP_PASSWORD
