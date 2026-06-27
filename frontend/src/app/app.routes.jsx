@@ -1,11 +1,10 @@
-
-import { createBrowserRouter, Navigate } from 'react-router-dom';
-import Login from '../feature/auth/pages/Login';
-import Register from '../feature/auth/pages/Register';
-import Dashboard from './../feature/chat/pages/Dashboard';
-import Protected from '../feature/auth/components/Protected';
-import PublicRouter from '../feature/auth/components/publicRouter';
-import Chatwrapper from '../feature/chat/components/Chatwrapper';
+import { createBrowserRouter, Navigate } from "react-router-dom";
+import Login from "../feature/auth/pages/Login.jsx";
+import Register from "../feature/auth/pages/Register.jsx";
+import Dashboard from "./../feature/chat/pages/Dashboard.jsx";
+import Protected from "../feature/auth/components/Protected.jsx";
+import PublicRouter from "../feature/auth/components/PublicRouter.jsx";
+import Chatwrapper from "../feature/chat/components/Chatwrapper.jsx";
 
 export const router = createBrowserRouter([
   {
@@ -35,14 +34,14 @@ export const router = createBrowserRouter([
     ),
     children: [
       {
-      index:true,
-      element:<Dashboard />
+        index: true,
+        element: <Dashboard />,
       },
       {
         path: "/chat/:id",
-        element:<Dashboard />
-      }
-  ],
+        element: <Dashboard />,
+      },
+    ],
   },
   {
     path: "/dashboard",
