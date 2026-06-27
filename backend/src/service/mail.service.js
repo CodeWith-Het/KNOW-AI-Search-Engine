@@ -13,7 +13,7 @@ const createTransporter = async () => {
       service: "gmail",
       auth: {
         user: process.env.GOOGLE_USER,
-        password:process.env.GOOGLE_APP_PASSWORD
+        pass:process.env.GOOGLE_APP_PASSWORD
       },
     });
 
