@@ -49,7 +49,7 @@ export const registerUser = async (req, res, next) => {
       `;
 
     try {
-      await sendEmail({
+      await sendmail({
         to: user.email,
         subject: "🔐 Verify Your Email Address",
         text: `Hi ${username}, verify your email by clicking here: ${verificationUrl}`,
