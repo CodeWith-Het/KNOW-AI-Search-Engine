@@ -18,7 +18,7 @@ app.use(morgan("dev"))
 app.use(cors({
     origin: [
         "http://localhost:5173",
-        "perplexity-cl5a62zsm-hetp1065-1813s-projects.vercel.app"
+        "https://perplexity-ai-umber.vercel.app"
     ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE"]
