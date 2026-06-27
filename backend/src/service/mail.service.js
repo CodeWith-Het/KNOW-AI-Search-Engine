@@ -18,6 +18,9 @@ const createTransporter = async () => {
       },
     });
 
+await transporter.verify();
+console.log("✅ SMTP Connected");
+
     return transporter;
   } catch (error) {
     console.error("Transporter creation error: ", error);
