@@ -1,25 +1,23 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-import dns from "dns"
 import nodemailer from "nodemailer";
-
-dns.setDefaultResultOrder('ipv4first');
 
 const createTransporter = async () => {
   try {
     const transporter = nodemailer.createTransport({
-      service: "gmail",
-      family: 4,
-        auth: {
+      host: "smtp.gmail.com",
+      port: 587,              
+      secure: false,          
+      family: 4,               
+      auth: {
         user: process.env.GOOGLE_USER,
-        pass:process.env.GOOGLE_APP_PASSWORD
+        pass: process.env.GOOGLE_APP_PASSWORD
       },
     });
 
-await transporter.verify();
-console.log("✅ SMTP Connected");
-
+    await transporter.verify();
+    console.log("✅ SMTP Connected");
     return transporter;
   } catch (error) {
     console.error("Transporter creation error: ", error);
