@@ -1,4 +1,3 @@
-import { success } from "zod";
 import { generateChatTitle, generateResponse } from "../service/ai.service.js"
 import chatModel from './../models/chat.model.js';
 import messageModel from './../models/message.model.js';
