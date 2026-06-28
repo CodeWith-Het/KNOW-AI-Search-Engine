@@ -8,7 +8,7 @@ const errorhandle = (err, req, res, next) => {
         message: err.message,
     };
  
-    if (process.env.NODE_ENVIRONMENT == "development") {
+    if (process.env.NODE_ENV == "development") {
       response.stack = err.stack;
     }
 
