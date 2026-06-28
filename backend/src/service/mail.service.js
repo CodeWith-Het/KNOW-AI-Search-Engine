@@ -27,7 +27,7 @@ console.log("✅ SMTP Connected");
   }
 };
 
-export const sendmail = async ({ to, subject, html }) => {
+export const sendmail = async ({ to, subject, text,html }) => {
   try {
     const emailTransporter = await createTransporter();
     
