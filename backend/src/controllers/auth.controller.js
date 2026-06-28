@@ -32,7 +32,7 @@ export const registerUser = async (req, res, next) => {
     );
 
 
-    const verificationUrl = `${process.env.API_URL}/api/auth/verify-email?token=${emailVerificationToken}`;
+    const verificationUrl = `${process.env.BACKEND_URL}/api/auth/verify-email?token=${emailVerificationToken}`;
 
     const emailHtmlTemplate = `
         <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px;">
@@ -147,10 +147,10 @@ export const verifyEmailUrl = async (req, res, next) => {
 
 export const loginUser = async (req, res, next) => {
   try {
-    // 🎯 Flexibility add kar di: frontend kuch bhi bheje, hum handle kar lenge
+
     const { loginId, username, email, password } = req.body;
     
-    // Check karo kya aaya hai
+
     const identifier = loginId || username || email;
 
     if (!identifier || !password) {
@@ -164,7 +164,7 @@ export const loginUser = async (req, res, next) => {
       .select("+password");
 
     if (!user) {
-      return res.status(404).json({ // 🎯 404 bhejo jab user na mile
+      return res.status(404).json({
         success: false,
         message: "User not found",
       });
@@ -179,9 +179,7 @@ export const loginUser = async (req, res, next) => {
       });
     }
 
-    // ... baaki ka JWT aur Cookie logic waise hi rahega
-    // (Make sure NODE_ENVIRONMENT/NODE_ENV setting sahi ho)
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "2d" });
+   const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "2d" });
 
     res.cookie("token", token, {
       httpOnly: true,
