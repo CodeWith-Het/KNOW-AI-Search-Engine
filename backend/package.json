@@ -14,12 +14,12 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
-    "@getbrevo/brevo": "^5.0.4",
     "@langchain/community": "^1.1.29",
     "@langchain/core": "^1.1.49",
     "@langchain/google-genai": "^2.1.31",
     "@langchain/mistralai": "^1.1.0",
     "@langchain/tavily": "^1.2.0",
+    "@sendgrid/mail": "^8.1.6",
     "@tavily/core": "^0.7.6",
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
