@@ -5,8 +5,8 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 export const sendmail = async ({ to, subject, text, html }) => {
   try {
     const { data, error } = await resend.emails.send({
-      from:process.env.GOOGLE_USER,
-      to,
+      from:'onboarding@resend.dev',
+      to:process.env.GOOGLE_USER,
       subject,
       text,
       html,
