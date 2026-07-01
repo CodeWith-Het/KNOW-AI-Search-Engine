@@ -10,7 +10,7 @@ const chatModelSchema = new mongoose.Schema({
         type: String,
         default:"New Conversation",
         required:true
-    }
+    },
 }, {
     timestamps: true
 })

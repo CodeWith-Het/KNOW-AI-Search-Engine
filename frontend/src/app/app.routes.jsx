@@ -4,7 +4,7 @@ import Register from "../feature/auth/pages/Register.jsx";
 import Dashboard from "./../feature/chat/pages/Dashboard.jsx";
 import Protected from "../feature/auth/components/Protected.jsx";
 import PublicRouter from "../feature/auth/components/PublicRouter.jsx";
-import Chatwrapper from "../feature/chat/components/Chatwrapper.jsx";
+import Chatwrapper from "../feature/chat/layout/Chatwrapper.jsx";
 
 export const router = createBrowserRouter([
   {
