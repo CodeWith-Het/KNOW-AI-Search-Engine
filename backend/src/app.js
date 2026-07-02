@@ -10,7 +10,7 @@ import cors from "cors"
 
 // last here
 import notFound from "./middleware/notfound.middleware.js";
-import errorhandle from './middleware/errors.middleware.js';
+import errorHandle from './middleware/errors.middleware.js';
 
 const app = express();
 
@@ -33,5 +33,5 @@ app.use("/api/chats",chatRouter)
 
 // last here
 app.use(notFound)
-app.use(errorhandle)
+app.use(errorHandle)
 export default app;

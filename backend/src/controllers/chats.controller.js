@@ -1,15 +1,20 @@
 import { generateChatTitle, generateResponse } from "../service/ai.service.js"
 import chatModel from './../models/chat.model.js';
 import messageModel from './../models/message.model.js';
+import AppError from './../utils/AppError.js';
 
-export const sendMessage = async (req, res) => {
+export const sendMessage = async (req, res, next) => {
     try {
         const { message, chat: chatId } = req.body
 
     let createdChatId = chatId
 
     if (!chatId) {
-         const title = await generateChatTitle(message)
+        const title = await generateChatTitle(message)
+
+        if (!message) {
+            return next(new AppError("Message is requied for create chatId",400,"MESSAGE_IS_REQUIRED"))
+        }
 
          const newChatData = await chatModel.create({
             user: req.user.id,
@@ -42,14 +47,11 @@ export const sendMessage = async (req, res) => {
     })
     }
     catch (error) {
-        res.status(500).json({
-            message:"server crash",
-            error: error.message
-        })
+       next(error)
     }
 }
 
-export const getChats = async (req,res)=>{
+export const getChats = async (req, res, next)=>{
     try{
         const user = req.user.id
 
@@ -64,27 +66,52 @@ export const getChats = async (req,res)=>{
         }
 
         res.status(200).json({
+            success:true,
             message:"chats fetched successfully",
             chats
         })
     }
     catch(error){
-        res.status(500).json({
-            message:"server crash",
-            error:error.message
-        })
+       next(error)
     }
 }
 
-export const getMessages = async (req,res)=>{
+export const getSearchChats = async (req, res, next) => {
+    try {
+            const userId = req.user.id
+
+    const { keyword } = req.params
+    
+    if (!keyword) {
+        return res.status(200).json({
+            success: true,
+            message: "No search keyword provided",
+            chats:[]
+        })
+    }
+
+    const matchChats = await chatModel.find({
+        user: userId,
+        title: { $regex: keyword, $options: "i" }
+    }).sort({ createdAt: -1 })
+    
+    res.status(200).json({
+        success: true,
+        message: "Chat successfully Search",
+        chats:matchChats
+    })
+    }
+    catch (error) {
+        next(error)
+    }
+}
+
+export const getMessages = async (req,res, next)=>{
     try {
         const { chatid: chatId } = req.params   
 
         if(!chatId){
-            return res.status(404).json({
-                success:false,
-                message:"Chat Not Found"
-            })
+            return next(new AppError("Chat Not Found",404,"CHAT_NOT_FOUND"))
         }
 
         const messages = await messageModel.find({chat:chatId})
@@ -96,44 +123,32 @@ export const getMessages = async (req,res)=>{
         })
 
     } catch (error) {
-        res.status(500).json({
-            message:"Server crash",
-            error:error.message
-        })
+       next(error)
     }
 }
 
-export const deleteChat = async (req,res)=>{
-    try{
-        const {chatid:chatId} = req.params
+export const deleteChat = async (req, res, next) => {
+    try {
+        const { chatid: chatId } = req.params
 
-    if(!chatId){
-        return res.status(404).json({
-            success:false,
-            message:"chat not found"
+        if (!chatId) {
+           return next(new AppError("Chat Not Found",404,"CHAT_NOT_FOUND"))
+        }
+
+        const deletedChat = await chatModel.findByIdAndDelete(chatId)
+
+        if (!deletedChat) {
+            return next(new AppError("Chat Not Found",404,"CHAT_NOT_FOUND"))
+        }
+
+        await messageModel.deleteMany({ chat: chatId })
+
+        res.status(200).json({
+            success: true,
+            message: "chat successfully deleted"
         })
     }
-
-    const deletedChat = await chatModel.findByIdAndDelete(chatId)
-
-    if(!deletedChat){
-        return res.status(404).json({
-            success:false,
-            message:"chat not found"
-        })
-    }
-
-    await messageModel.deleteMany({chat:chatId})
-
-    res.status(200).json({
-        success:true,
-        message:"chat successfully deleted"
-    })
-    }
-    catch(error){
-        res.status(500).json({
-            message:"server crash",
-            error:error.message
-        })
+    catch (error) {
+        next(error)
     }
 }

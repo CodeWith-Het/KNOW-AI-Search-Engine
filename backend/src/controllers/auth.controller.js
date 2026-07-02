@@ -2,6 +2,7 @@ import userModel from "../models/user.model.js";
 import jwt from "jsonwebtoken";
 import { sendmail } from "../service/mail.service.js";
 import redis from '../config/redis.js';
+import AppError from './../utils/AppError.js';
 
 export const registerUser = async (req, res, next) => {
   try {
@@ -12,11 +13,7 @@ export const registerUser = async (req, res, next) => {
     });
 
     if (isAlreadyExist) {
-      return res.status(409).json({
-        success: false,
-        message: "User with this email or username already exists",
-        error: "User already exists",
-      });
+      return next(new AppError("User already exists.",409,"USER_ALREADY_EXISTS"));
     }
 
     const user = await userModel.create({
@@ -58,10 +55,9 @@ export const registerUser = async (req, res, next) => {
     } catch (emailError) {
       console.error("Failed to send verification email:", emailError);
       await user.deleteOne();
-      return res.status(500).json({
-        success: false,
-        message: "Unable to send verification email. Please try again later.",
-      });
+
+      // for error status
+      return next(new AppError("Unable to send verification email. Please try again later.",500,"EMAIL_SEND_FAILED"))
     }
 
     res.status(201).json({
@@ -83,33 +79,21 @@ export const verifyEmailUrl = async (req, res, next) => {
     const emailVerificationToken = req.query.token;
 
     if (!emailVerificationToken) {
-      return res.status(400).json({
-        success: false,
-        message: "Token not provide, please check you mail",
-        error:"token not provide"
-      })
+      return next(new AppError("Token not provide, please check you mail",401,"TOKEN_NOT_PROVIDED"))
     }
 
     let decode = null;
     try {
       decode = jwt.verify(emailVerificationToken, process.env.JWT_SECRET);
     } catch (error) {
-
-      return res.status(400).json({
-        success: false,
-        message: "Invail Token, Please provide right token",
-        error:"Invaild Token"
-      })
-    }
+      return next(AppError("Invail Token, Please provide right token",401,"INVALID_TOKEN"))
+    
+  }
 
     const user = await userModel.findOne({ email: decode.email });
 
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not find, Please provide right information",
-        error:"User not found"
-      })
+      return next(new AppError("User not find, Please provide right information",404,"USER_NOT_FOUND"))
     }
 
     if (user.isVerified) {
@@ -154,7 +138,7 @@ export const loginUser = async (req, res, next) => {
     const identifier = loginId || username || email;
 
     if (!identifier || !password) {
-      return res.status(400).json({ success: false, message: "Credentials missing" });
+      return next(new AppError("Credentials missing",400,"CREDENTIALS_MISSING"))
     }
 
     const user = await userModel
@@ -164,19 +148,13 @@ export const loginUser = async (req, res, next) => {
       .select("+password");
 
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
+      return next(new AppError("User Not Found",404,"USER_NOT_FOUND"))
     }
 
     const isPasswordMatch = await user.comparePassword(password);
 
     if (!isPasswordMatch) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid password",
-      });
+      return next(new AppError("Password invalid",401,"WRONG_PASSWORD"))
     }
 
    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "2d" });
@@ -206,11 +184,7 @@ export const getUser = async (req, res, next) => {
   const user = await userModel.findById(userid).select("-password") 
   
   if (!user) {
-    return res.status(404).json({
-      success:false,
-      message: "User not exist",
-      error:"User not exist"
-    })
+    return next(new AppError("User Not Found",404,"USER_NOT_FOUND"))
   }
 
   user.password = undefined
@@ -240,7 +214,7 @@ export const logoutUser = async (req, res, next) => {
         `blacklist:${token}`,
         "true",
         "EX",
-        2 * 24 * 60 * 60
+        2 * 24 * 60 * 60 
       );
     }
 

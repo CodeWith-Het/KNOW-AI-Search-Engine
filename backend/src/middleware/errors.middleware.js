@@ -1,18 +1,22 @@
 import dotenv from "dotenv";
 dotenv.config()
 
-const errorhandle = (err, req, res, next) => { 
+const errorHandle = (err, req, res, next) => { 
 
     const response = {
         success: false,
-        message: err.message,
+        message: err.message || "Internal Server Error"
     };
+
+    if (err.errorCode) {
+        response.errorCode=err.errorCode
+    }
  
     if (process.env.NODE_ENV == "development") {
       response.stack = err.stack;
     }
 
-    res.status(err.status || 500).json(response)
+    res.status(err.statusCode || 500).json(response)
 }
 
-export default errorhandle
+export default errorHandle
