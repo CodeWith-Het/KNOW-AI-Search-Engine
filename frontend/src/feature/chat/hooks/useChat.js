@@ -69,15 +69,25 @@ export const useChat = () => {
     }
 
     const searchConversations = async (keyword) => {
-    try {
-      const data = await getSearchChatsApi(keyword);
-      if (data.success) {
-          return data.chats; // array me chat aayega 
-      }
-      return [];
+        try {
+        dispatch(setLoading(true))
+
+        const response = await getSearchChatsApi(keyword);
+        
+        if (response.success) {
+          return response.chats; // array me chat aayega 
+        }
+
+        return [];
+        
     } catch (error) {
-      console.error("Search feature error:", error);
-      return []; // Error aane par khali array bhej do taaki UI crash na ho
+
+        dispatch(setError(error.message || "chat not found"))
+        
+        return []; // Error aane par khali array bhej do taaki UI crash na ho  
+        }
+        finally {
+            dispatch(setLoading(false))
     }
   }
 

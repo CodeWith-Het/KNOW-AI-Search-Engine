@@ -1,29 +1,34 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { getSearchChatsApi } from "../service/chatApi.service";
+import { useChat } from "../hooks/useChat";
 
-const GlobalSearchModal = ({ isOpen, onClose, loadMessages }) => {
+const GlobalSearchModal = ({ isOpen, onClose }) => {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const navigate = useNavigate();
 
-  //User ke rukne par hi API call hogi
+const { loadMessages, searchConversations } = useChat()
+
+  // User ke rukne par hi API call hogi
   useEffect(() => {
     if (!query.trim()) {
       setResults([]);
       return;
     }
 
+    // user ruk janwe ke bad 400ms ke baad API call hogi
     setLoading(true);
     const delayDebounce = setTimeout(async () => {
       try {
-        const data = await getSearchChatsApi(query);
-        if (data.success) setResults(data.chats);
-      } catch (err) {
+        const matchChats = await searchConversations(query);
+        setResults(matchChats)
+      }
+      catch (err) {
         console.error(err);
-      } finally {
+      }
+      finally {
         setLoading(false);
       }
     }, 400);
@@ -31,7 +36,7 @@ const GlobalSearchModal = ({ isOpen, onClose, loadMessages }) => {
     return () => clearTimeout(delayDebounce);
   }, [query]);
 
-  // 🎯 KEYBOARD NAVIGATION: Up, Down, Enter
+  // KEYBOARD NAVIGATION: Up, Down, Enter
   const handleKeyDown = (e) => {
     if (e.key === "Escape") onClose();
     if (results.length === 0) return;
@@ -48,10 +53,12 @@ const GlobalSearchModal = ({ isOpen, onClose, loadMessages }) => {
     }
   };
 
+  // jab koi user chat ko select kare to uska message load ho jaye 
+  // and search Model close ho jaye
   const handleSelectChat = (chatId) => {
-    loadMessages(chatId); // 1. Us chat ke messages load karo Redux me
-    navigate(`/chat/${chatId}`); // 2. URL badlo taaki ChatScreen load ho jaye
-    onClose(); // 3. Search page band kar do
+    loadMessages(chatId); // Us chat ke messages load karo Redux me
+    navigate(`/chat/${chatId}`); // URL badlo taaki ChatScreen load ho jaye
+    onClose(); // Search page band kar do
     setQuery("");
     setSelectedIndex(-1);
   };

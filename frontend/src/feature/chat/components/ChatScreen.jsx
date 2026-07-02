@@ -1,13 +1,13 @@
-import React from "react";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import { useChat } from "../hooks/useChat";
 import { useAuth } from "../../auth/hook/useAuth";
 import remarkGfm from "remark-gfm";
 import ReactMarkdown from "react-markdown";
+import GlobalSearchModal from "./GlobalSearchModal";
 
-// Formats message content for display
+// Helper function: Array of objects ko string mein badalne ke liye
 const formatMessage = (content) => {
   if (typeof content === "string") return content;
   return Array.isArray(content)
@@ -18,10 +18,9 @@ const formatMessage = (content) => {
 const ChatScreen = () => {
   const [chatInput, setChatInput] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResult, setSearchResult] = useState([]);
+  //  Global Search Modal control karne ke liye
+  const [isGlobalSearchOpen, setIsGlobalSearchOpen] = useState(false);
 
-  //
   const { user } = useSelector((state) => state.auth);
   const { isLoading, chats, isActiveChatId, messages } = useSelector(
     (state) => state.chat,
@@ -39,46 +38,28 @@ const ChatScreen = () => {
 
   const handleSend = async () => {
     if (!chatInput.trim()) return;
-
     const text = chatInput;
     setChatInput("");
-
     await sendMessage(text, isActiveChatId);
   };
 
-  const handleKeyDown = async (e) => {
+  const handleKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
   };
 
-  // 🎯 URL ID Sync Logic
+  // URL ID Sync Logic
   useEffect(() => {
     if (id) {
       loadMessages(id);
     }
   }, [id]);
 
-  const handleSearch = (e) => {
-    const query = e.target.value;
-    setSearchQuery(query);
-
-    if (!query.trim()) {
-      setSearchResult([]);
-      return;
-    }
-
-    const result = messages.filter((msg) => {
-      const textContent = formatMessage(msg.content);
-      return textContent.toLowerCase().includes(query.toLowerCase());
-    });
-    setSearchResult(result);
-  };
-
   return (
     <div className="flex h-screen bg-gray-100 text-gray-800 font-sans overflow-hidden relative">
-      {/* 🎯 MOBILE DRAWER OVERLAY */}
+      {/* MOBILE DRAWER OVERLAY */}
       {isSidebarOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
@@ -114,13 +95,14 @@ const ChatScreen = () => {
           </button>
         </div>
 
-        {/* Top: New Chat Button */}
-        <div className="p-4 border-b border-gray-100 pt-2 md:pt-4">
+        {/* 🎯 ACTION BUTTONS: New Chat & Search */}
+        <div className="p-4 border-b border-gray-100 pt-2 md:pt-4 space-y-3">
+          {/* New Chat Button */}
           <button
             onClick={() => {
               newChats();
               navigate("/");
-              setIsSidebarOpen(false); // 🎯 Mobile click par band
+              setIsSidebarOpen(false);
             }}
             className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-sky-500 hover:bg-sky-600 text-white rounded-lg shadow-md transition-all font-medium text-sm cursor-pointer"
           >
@@ -139,41 +121,31 @@ const ChatScreen = () => {
             </svg>
             New Chat
           </button>
+
+          {/* 🎯 GLOBAL SEARCH TRIGGER BUTTON */}
+          <button
+            onClick={() => setIsGlobalSearchOpen(true)}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 text-gray-600 border border-gray-200 rounded-lg shadow-sm transition-all font-medium text-sm cursor-pointer"
+          >
+            <svg
+              className="w-4 h-4 text-gray-500"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              ></path>
+            </svg>
+            Search Chats
+          </button>
         </div>
 
-        {/* Middle: Chat History (🚀 Sidebar Scrollbar Hidden) */}
+        {/* Chat History List */}
         <div className="flex-1 overflow-y-auto p-3 space-y-1 mt-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-          <div className="relative w-full max-w-md mx-auto p-4">
-            <input
-              type="text"
-              placeholder="Search in conversation..."
-              value={searchQuery}
-              onChange={handleSearch}
-              className="w-full px-4 py-2 border rounded-full bg-white shadow-sm outline-none focus:ring-2 focus:ring-sky-500"
-            />
-
-            {/* Floating Results Panel */}
-            {searchResult.length > 0 && (
-              <div className="absolute top-14 left-0 right-0 bg-white border rounded-xl shadow-2xl max-h-60 overflow-y-auto z-50">
-                {searchResult.map((result, idx) => (
-                  <div
-                    key={idx}
-                    onClick={() => {
-                      // Scroll to message logic
-                      document
-                        .getElementById(`msg-${result._id}`)
-                        ?.scrollIntoView({ behavior: "smooth" });
-                      setSearchResult([]); // Close panel
-                      setSearchQuery("");
-                    }}
-                    className="p-3 hover:bg-sky-50 cursor-pointer border-b text-sm"
-                  >
-                    {formatMessage(result.content.substring(0, 50))}...
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 px-2">
             Recent Chats
           </p>
@@ -185,7 +157,7 @@ const ChatScreen = () => {
                 onClick={() => {
                   loadMessages(c._id);
                   navigate(`/chat/${c._id}`);
-                  setIsSidebarOpen(false); // 🎯 Mobile click par band
+                  setIsSidebarOpen(false);
                 }}
                 className={`group flex items-center justify-between px-3 py-2.5 text-sm rounded-md cursor-pointer border transition-colors ${
                   isActiveChatId === c._id
@@ -276,7 +248,7 @@ const ChatScreen = () => {
           </button>
         </header>
 
-        {/* Chat Messages Display (🚀 Scrollable with Hidden Scrollbar) */}
+        {/* Chat Messages Display */}
         <div className="flex-1 overflow-y-scroll scroll-smooth p-4 md:p-8 max-w-4xl mx-auto w-full h-[calc(100vh-120px)] overflow-x-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {!messages || messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center space-y-4 pt-10">
@@ -292,9 +264,7 @@ const ChatScreen = () => {
               {messages.map((msg, index) => (
                 <div
                   key={index}
-                  className={`flex ${
-                    msg.role === "user" ? "justify-end" : "justify-start"
-                  }`}
+                  className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                 >
                   <div
                     className={`p-4 max-w-[85%] md:max-w-[80%] rounded-2xl ${
@@ -307,7 +277,6 @@ const ChatScreen = () => {
                       formatMessage(msg.content)
                     ) : (
                       <div className="prose prose-sm max-w-none text-gray-800 overflow-x-auto">
-                        {/* 🎯 2. Yahan remarkPlugins lagaya */}
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>
                           {formatMessage(msg.content)}
                         </ReactMarkdown>
@@ -327,7 +296,7 @@ const ChatScreen = () => {
           )}
         </div>
 
-        {/* ⌨️ INPUT AREA (🚀 Sticky with Backdrop Blur) */}
+        {/* ⌨️ INPUT AREA */}
         <div className="p-4 md:p-6 w-full max-w-4xl mx-auto sticky bottom-0 bg-gray-100 bg-opacity-95 backdrop-blur-md z-30 shrink-0">
           <div className="relative border border-gray-300 rounded-xl shadow-lg bg-white focus-within:border-sky-400 focus-within:ring-4 focus-within:ring-sky-100 transition-all">
             <textarea
@@ -341,7 +310,6 @@ const ChatScreen = () => {
               onKeyDown={handleKeyDown}
               disabled={isLoading}
             ></textarea>
-
             <button
               onClick={handleSend}
               disabled={isLoading || !chatInput.trim()}
@@ -369,6 +337,12 @@ const ChatScreen = () => {
           </div>
         </div>
       </main>
+
+      {/* 🎯 GLOBAL SEARCH MODAL YAHAN ATTACH KIYA HAI */}
+      <GlobalSearchModal
+        isOpen={isGlobalSearchOpen}
+        onClose={() => setIsGlobalSearchOpen(false)}
+      />
     </div>
   );
 };
