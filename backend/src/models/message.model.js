@@ -8,7 +8,7 @@ const messageSchemaModel = new mongoose.Schema({
         index:true
     },
     content: {
-        type: String,
+        type: mongoose.Schema.Types.Mixed,
         required:true
     },
     role: {

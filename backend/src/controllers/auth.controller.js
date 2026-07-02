@@ -86,7 +86,7 @@ export const verifyEmailUrl = async (req, res, next) => {
     try {
       decode = jwt.verify(emailVerificationToken, process.env.JWT_SECRET);
     } catch (error) {
-      return next(AppError("Invail Token, Please provide right token",401,"INVALID_TOKEN"))
+      return next(new AppError("Invail Token, Please provide right token",401,"INVALID_TOKEN"))
     
   }
 
@@ -220,8 +220,8 @@ export const logoutUser = async (req, res, next) => {
 
     res.clearCookie("token", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "development",
-      sameSite: process.env.NODE_ENV === "development" ? "none" : "lax",
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     });
 
     res.status(200).json({
