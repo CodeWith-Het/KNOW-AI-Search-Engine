@@ -1,6 +1,6 @@
 import { useDispatch } from 'react-redux';
 import { setActiveChatId,setLoading,setChats,setMessages,addNewMessages,setClearChat,setError } from '../chat.slice';
-import { sendMessageApi,getChatsApi,getMessagesApi,deleteChatApi } from '../service/chatApi.service';
+import { sendMessageApi,getChatsApi,getMessagesApi,getSearchChatsApi,deleteChatApi } from '../service/chatApi.service';
 import { useNavigate } from 'react-router-dom';
 
 export const useChat = () => {
@@ -68,6 +68,19 @@ export const useChat = () => {
         }
     }
 
+    const searchConversations = async (keyword) => {
+    try {
+      const data = await getSearchChatsApi(keyword);
+      if (data.success) {
+          return data.chats; // array me chat aayega 
+      }
+      return [];
+    } catch (error) {
+      console.error("Search feature error:", error);
+      return []; // Error aane par khali array bhej do taaki UI crash na ho
+    }
+  }
+
     const deleteChat = async (chatId,currentChatId) => {
         try {
             dispatch(setLoading(true))
@@ -86,5 +99,5 @@ export const useChat = () => {
             dispatch(setLoading(false))
         }
     } 
-        return { newChats, fetchAllChats,loadMessages,sendMessage,deleteChat}
+        return { newChats, fetchAllChats,loadMessages,sendMessage,searchConversations,deleteChat}
 }

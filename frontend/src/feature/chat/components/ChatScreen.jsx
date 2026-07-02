@@ -168,7 +168,7 @@ const ChatScreen = () => {
                     }}
                     className="p-3 hover:bg-sky-50 cursor-pointer border-b text-sm"
                   >
-                    {result.content.substring(0, 50)}...
+                    {formatMessage(result.content.substring(0, 50))}...
                   </div>
                 ))}
               </div>

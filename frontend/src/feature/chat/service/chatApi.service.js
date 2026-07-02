@@ -39,6 +39,16 @@ export const getMessagesApi = async (chatId) => {
     }
 }
 
+export const getSearchChatsApi = async (keyword) => {
+    try {
+        const response = await api.get(`/search/${keyword}`)
+        return response.data
+    }
+    catch (error) {
+        throw new Error(error.response?.data?.message || "Search Failed",{cause:error})
+    }
+}
+
 export const deleteChatApi = async (chatId) => {
     try{
         const response = await api.delete(`/delete/${chatId}`)
