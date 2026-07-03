@@ -5,7 +5,6 @@ import Dashboard from "./../feature/chat/pages/Dashboard.jsx";
 import Protected from "../feature/auth/components/Protected.jsx";
 import PublicRouter from "../feature/auth/components/PublicRouter.jsx";
 import Chatwrapper from "../feature/chat/layout/Chatwrapper.jsx";
-import VerifyEmail from "../feature/auth/pages/VerifyEmail.jsx";
 
 export const router = createBrowserRouter([
   {
@@ -23,10 +22,6 @@ export const router = createBrowserRouter([
         <Register />
       </PublicRouter>
     ),
-  },
-  {
-    path: "/verify-email",
-    element: <VerifyEmail />,
   },
   {
     path: "/",
