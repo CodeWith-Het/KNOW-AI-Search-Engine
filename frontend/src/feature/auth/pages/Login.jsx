@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { Link, Navigate } from "react-router-dom"; 
-import { useSelector } from "react-redux"; 
+import { Link, Navigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import { useAuth } from "./../hook/useAuth";
 
 const Login = () => {
@@ -12,9 +12,8 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const { loginUser } = useAuth();
-
-  const user = useSelector((state) => state.auth.user)
-  const loading = useSelector((state)=>state.auth.loading)
+  const user = useSelector((state) => state.auth.user);
+  const loading = useSelector((state) => state.auth.loading);
 
   if (user && !loading) {
     return <Navigate to="/" replace />;
@@ -22,34 +21,20 @@ const Login = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-    if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: "",
-      }));
-    }
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.emailOrUsername.trim()) {
-      newErrors.emailOrUsername = "Email or username is required";
-    }
-    if (!formData.password) {
-      newErrors.password = "Password is required";
-    } else if (formData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
-    }
+    if (!formData.emailOrUsername.trim())
+      newErrors.emailOrUsername = "Identifier is required";
+    if (!formData.password) newErrors.password = "Password is required";
     return newErrors;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const newErrors = validateForm();
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -70,18 +55,14 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4 py-10 font-sans">
-      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg">
-        
+    <div className="min-h-screen bg-[#F9FAFB] flex items-center justify-center px-4 py-10 font-sans">
+      <div className="w-full max-w-md rounded-[2rem] bg-white p-8 md:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100">
         <div className="mb-8 text-center">
-          <p className="inline-flex rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-sky-600">
-            Login
-          </p>
-          <h1 className="mt-5 text-3xl font-bold text-gray-800">
+          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
             Welcome Back
           </h1>
-          <p className="mt-2 text-sm text-gray-500">
-            Sign in to your account to continue.
+          <p className="mt-3 text-sm text-gray-500">
+            Sign in to continue your research.
           </p>
         </div>
 
@@ -89,7 +70,7 @@ const Login = () => {
           <div>
             <label
               htmlFor="emailOrUsername"
-              className="mb-1 block text-sm font-medium text-gray-700"
+              className="mb-1.5 block text-sm font-semibold text-gray-700"
             >
               Email or Username
             </label>
@@ -100,22 +81,28 @@ const Login = () => {
               placeholder="Enter your email or username"
               value={formData.emailOrUsername}
               onChange={handleChange}
-              className={`w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100 ${errors.emailOrUsername ? "border-red-500 ring-2 ring-red-100" : ""}`}
+              className={`w-full rounded-2xl border bg-gray-50/50 px-4 py-3.5 text-sm text-gray-900 outline-none transition-all focus:bg-white focus:border-gray-900 focus:ring-1 focus:ring-gray-900 ${
+                errors.emailOrUsername
+                  ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+                  : "border-gray-200"
+              }`}
             />
             {errors.emailOrUsername && (
-              <p className="mt-1.5 text-sm text-red-500">
+              <p className="mt-1.5 text-xs font-medium text-red-500">
                 {errors.emailOrUsername}
               </p>
             )}
           </div>
 
           <div>
-            <label
-              htmlFor="password"
-              className="mb-1 block text-sm font-medium text-gray-700"
-            >
-              Password
-            </label>
+            <div className="flex justify-between items-center mb-1.5">
+              <label
+                htmlFor="password"
+                className="block text-sm font-semibold text-gray-700"
+              >
+                Password
+              </label>
+            </div>
             <input
               type="password"
               id="password"
@@ -123,15 +110,21 @@ const Login = () => {
               placeholder="Enter your password"
               value={formData.password}
               onChange={handleChange}
-              className={`w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100 ${errors.password ? "border-red-500 ring-2 ring-red-100" : ""}`}
+              className={`w-full rounded-2xl border bg-gray-50/50 px-4 py-3.5 text-sm text-gray-900 outline-none transition-all focus:bg-white focus:border-gray-900 focus:ring-1 focus:ring-gray-900 ${
+                errors.password
+                  ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+                  : "border-gray-200"
+              }`}
             />
             {errors.password && (
-              <p className="mt-1.5 text-sm text-red-500">{errors.password}</p>
+              <p className="mt-1.5 text-xs font-medium text-red-500">
+                {errors.password}
+              </p>
             )}
           </div>
 
           {errors.submit && (
-            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+            <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600 font-medium">
               {errors.submit}
             </div>
           )}
@@ -139,26 +132,21 @@ const Login = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className="mt-4 w-full rounded-lg bg-sky-500 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-sky-600 disabled:cursor-not-allowed disabled:opacity-70"
+            className="mt-6 w-full rounded-2xl bg-[#111827] px-5 py-3.5 text-sm font-bold text-white shadow-md transition-all hover:bg-gray-800 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
           >
-            {isLoading ? "Login in..." : "Login"}
+            {isLoading ? "Signing in..." : "Sign in"}
           </button>
         </form>
 
-        <div className="mt-8 text-center text-sm text-gray-600">
-          <p>
-            Don&apos;t have an account?{" "}
-            <Link
-              to="/register"
-              className="font-semibold text-sky-500 hover:text-sky-600 hover:underline"
-            >
-              Sign Up 
-            </Link>
-          </p>
+        <div className="mt-8 text-center text-sm font-medium text-gray-500">
+          Don't have an account?{" "}
+          <Link to="/register" className="text-gray-900 hover:underline">
+            Sign up
+          </Link>
         </div>
       </div>
     </div>
   );
 };
 
-export default Login; 
+export default Login;

@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-body{
-    background-color: black;
-    color: white;
+@keyframes shrink {
+  from { width: 100%; }
+  to { width: 0%; }
 }
