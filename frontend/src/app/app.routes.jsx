@@ -5,7 +5,7 @@ import Dashboard from "./../feature/chat/pages/Dashboard.jsx";
 import Protected from "../feature/auth/components/Protected.jsx";
 import PublicRouter from "../feature/auth/components/PublicRouter.jsx";
 import Chatwrapper from "../feature/chat/layout/Chatwrapper.jsx";
-import VerifyEmail from './../feature/auth/pages/VerifyEmail';
+import VerifyEmail from "../feature/auth/pages/Verifyemail.jsx";
 
 export const router = createBrowserRouter([
   {
