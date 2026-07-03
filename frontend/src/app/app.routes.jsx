@@ -1,11 +1,11 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import Login from "../feature/auth/pages/Login.jsx";
 import Register from "../feature/auth/pages/Register.jsx";
-import VerifyEmail from '../feature/auth/pages/VerifyEmail.jsx';
 import Dashboard from "./../feature/chat/pages/Dashboard.jsx";
 import Protected from "../feature/auth/components/Protected.jsx";
 import PublicRouter from "../feature/auth/components/PublicRouter.jsx";
 import Chatwrapper from "../feature/chat/layout/Chatwrapper.jsx";
+import VerifyEmail from './../feature/auth/pages/VerifyEmail';
 
 export const router = createBrowserRouter([
   {
