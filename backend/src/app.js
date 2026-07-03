@@ -28,8 +28,8 @@ app.use(cors({
 }));
 
 // CRON JOB HEALTH CHECK ROUTE  
-app.get('/ping', (req, res) => {
-    res.status(200).send('Perplexity Clone Backend is Alive and Running! 🚀');
+app.get('/', (req, res) => {
+    res.status(200).send('KNOW AI Backend is Alive and Running! 🚀');
 });
 
 // routers
