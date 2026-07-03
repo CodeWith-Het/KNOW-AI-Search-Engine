@@ -15,10 +15,7 @@ const Register = () => {
   
   const user = useSelector((state) => state.auth.user);
   const loading = useSelector((state) => state.auth.loading);
-  
-  if (user && !loading) {
-    return <Navigate to="/login" replace />;
-  }
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -51,10 +48,11 @@ const Register = () => {
     setIsLoading(true);
     try {
       await registerUser(formData);
-      setShowPopup(true); // 🎯 Show Reusable Popup
+      setShowPopup(true); 
       
       // Wait for popup animation then redirect
       setTimeout(() => {
+        setShowPopup(false)
         navigate("/login");
       }, 5000);
       
