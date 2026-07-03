@@ -28,7 +28,7 @@ export const getUser = async () => {
         const response = await api.get("/getuser");
         return response.data.user;
     } catch (error) {
-        throw new Error(error.response?.data?.message || "User not retrieved", { cause: error });
+        throw new Error(error.response?.data?.message || "User not retrieved" , { cause: error });
     }
 };
 
@@ -38,5 +38,14 @@ export const logout = async () => {
         return response.data;
     } catch (error) {
         throw new Error(error.response?.data?.message || "Logout Failed", { cause: error });
+    }
+};
+
+export const resendVerificationEmail = async (email) => {
+    try {
+        const response = await api.post("/resend-verification", { email });
+        return response.data;
+    } catch (error) {
+        throw new Error(error.response?.data?.message || "Unable to resend verification email", { cause: error });
     }
 };

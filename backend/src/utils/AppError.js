@@ -1,9 +1,9 @@
 class AppError extends Error{
     constructor(message, statusCode, errorCode = null) {
         
-        this.success=false
-
         super(message)
+
+        this.success = false
 
         this.statusCode = statusCode
         
