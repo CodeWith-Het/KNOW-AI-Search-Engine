@@ -75,60 +75,51 @@ export const registerUser = async (req, res, next) => {
 };
 
 export const verifyEmailUrl = async (req, res, next) => {
+  const frontendVerifyUrl = `${process.env.FRONTEND_URL}/verify-email`;
+
   try {
     const emailVerificationToken = req.query.token;
 
     if (!emailVerificationToken) {
-      return next(new AppError("Token not provide, please check you mail",401,"TOKEN_NOT_PROVIDED"))
+      return res.redirect(
+        `${frontendVerifyUrl}?status=error&reason=TOKEN_NOT_PROVIDED`,
+      );
     }
 
     let decode = null;
     try {
       decode = jwt.verify(emailVerificationToken, process.env.JWT_SECRET);
     } catch (error) {
-      return next(new AppError("Invail Token, Please provide right token",401,"INVALID_TOKEN"))
-    
-  }
+      return res.redirect(
+        `${frontendVerifyUrl}?status=error&reason=INVALID_TOKEN`,
+      );
+    }
 
     const user = await userModel.findOne({ email: decode.email });
 
     if (!user) {
-      return next(new AppError("User not find, Please provide right information",404,"USER_NOT_FOUND"))
+      return res.redirect(
+        `${frontendVerifyUrl}?status=error&reason=USER_NOT_FOUND`,
+      );
     }
 
     if (user.isVerified) {
-      return res.status(200).json({
-        success: true,
-        message: "user is verified"
-      })
+      return res.redirect(
+        `${frontendVerifyUrl}?status=success&username=${encodeURIComponent(user.username)}&already=true`,
+      );
     }
 
     user.isVerified = true;
     await user.save();
 
-    const frontendLoginUrl = `${process.env.FRONTEND_URL}/login`;
-
-    const html = `
-    <div style="text-align: center; margin-top: 50px; font-family: sans-serif; background-color: #f9fafb; padding: 40px;">
-          <div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: inline-block;">
-            <h1 style="color: #10B981; font-size: 40px; margin: 0;">✅</h1>
-            <h2 style="color: #374151;">Email Verified Successfully!</h2>
-            <p style="color: #6B7280;">Welcome aboard, <strong>${user.username}</strong>! Aapka account activate ho gaya hai.</p>
-            <p style="color: #9CA3AF; font-size: 14px; margin-top: 20px;">Ab aap is tab ko close karke app mein login kar sakte hain.</p>
-            
-           <a href="${frontendLoginUrl}" style="background-color: #4F46E5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 20px; font-weight: bold;">
-              Go to Login
-            </a>
-          </div>
-      </div>
-    `;
-
-    res.status(200).send(html);
+    return res.redirect(
+      `${frontendVerifyUrl}?status=success&username=${encodeURIComponent(user.username)}`,
+    );
   } catch (error) {
-    next(error);
+    console.error("verifyEmailUrl error:", error);
+    return res.redirect(`${frontendVerifyUrl}?status=error&reason=SERVER_ERROR`);
   }
 };
-
 export const loginUser = async (req, res, next) => {
   try {
 

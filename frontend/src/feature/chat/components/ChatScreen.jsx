@@ -18,7 +18,6 @@ const formatMessage = (content) => {
 const ChatScreen = () => {
   const [chatInput, setChatInput] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  //  Global Search Modal control karne ke liye
   const [isGlobalSearchOpen, setIsGlobalSearchOpen] = useState(false);
 
   const { user } = useSelector((state) => state.auth);
@@ -50,7 +49,6 @@ const ChatScreen = () => {
     }
   };
 
-  // URL ID Sync Logic
   useEffect(() => {
     if (id) {
       loadMessages(id);
@@ -58,26 +56,26 @@ const ChatScreen = () => {
   }, [id]);
 
   return (
-    <div className="flex h-screen bg-gray-100 text-gray-800 font-sans overflow-hidden relative">
+    <div className="flex h-screen bg-[var(--paper)] text-[var(--ink)] font-['Inter',sans-serif] overflow-hidden relative">
       {/* MOBILE DRAWER OVERLAY */}
       {isSidebarOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden"
           onClick={() => setIsSidebarOpen(false)}
         ></div>
       )}
 
-      {/* ⬅️ SIDEBAR */}
+      {/* ⬅️ SIDEBAR — ink dark, premium */}
       <aside
-        className={`fixed md:relative z-50 h-full w-64 bg-white border-r border-gray-200 flex flex-col shadow-lg transition-transform duration-300 ease-in-out 
-        ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"} 
+        className={`fixed md:relative z-50 h-full w-72 bg-[var(--ink)] flex flex-col shadow-2xl transition-transform duration-300 ease-in-out
+        ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
         md:translate-x-0 md:flex`}
       >
         {/* Mobile Close Button */}
-        <div className="flex justify-end p-2 md:hidden border-b border-gray-100">
+        <div className="flex justify-end p-2 md:hidden border-b border-white/10">
           <button
             onClick={() => setIsSidebarOpen(false)}
-            className="text-gray-500 hover:text-red-500 p-2"
+            className="text-white/50 hover:text-white p-2"
           >
             <svg
               className="w-6 h-6"
@@ -95,19 +93,25 @@ const ChatScreen = () => {
           </button>
         </div>
 
-        {/* 🎯 ACTION BUTTONS: New Chat & Search */}
-        <div className="p-4 border-b border-gray-100 pt-2 md:pt-4 space-y-3">
-          {/* New Chat Button */}
+        {/* Brand */}
+        <div className="px-5 pt-6 pb-2 hidden md:block">
+          <span className="font-mono-label text-2XL tracking-[0.2em] text-[var(--amber)] uppercase">
+            KNOW AI
+          </span>
+        </div>
+
+        {/* 🎯 ACTION BUTTONS */}
+        <div className="p-4 pt-3 space-y-2.5">
           <button
             onClick={() => {
               newChats();
               navigate("/");
               setIsSidebarOpen(false);
             }}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-sky-500 hover:bg-sky-600 text-white rounded-lg shadow-md transition-all font-medium text-sm cursor-pointer"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[var(--violet)] hover:bg-[var(--violet-deep)] text-white rounded-xl shadow-lg shadow-[var(--violet)]/20 transition-all font-semibold text-sm cursor-pointer"
           >
             <svg
-              className="w-5 h-5"
+              className="w-4 h-4"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -122,13 +126,12 @@ const ChatScreen = () => {
             New Chat
           </button>
 
-          {/* 🎯 GLOBAL SEARCH TRIGGER BUTTON */}
           <button
             onClick={() => setIsGlobalSearchOpen(true)}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 text-gray-600 border border-gray-200 rounded-lg shadow-sm transition-all font-medium text-sm cursor-pointer"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 rounded-xl transition-all font-medium text-sm cursor-pointer"
           >
             <svg
-              className="w-4 h-4 text-gray-500"
+              className="w-4 h-4"
               fill="none"
               stroke="currentColor"
               strokeWidth="2"
@@ -145,9 +148,9 @@ const ChatScreen = () => {
         </div>
 
         {/* Chat History List */}
-        <div className="flex-1 overflow-y-auto p-3 space-y-1 mt-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 px-2">
-            Recent Chats
+        <div className="flex-1 overflow-y-auto px-3 pb-3 space-y-1 mt-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          <p className="font-mono-label text-[10px] text-white/30 uppercase tracking-widest mb-2 px-2">
+            Recent
           </p>
 
           {chats && chats.length > 0 ? (
@@ -159,10 +162,10 @@ const ChatScreen = () => {
                   navigate(`/chat/${c._id}`);
                   setIsSidebarOpen(false);
                 }}
-                className={`group flex items-center justify-between px-3 py-2.5 text-sm rounded-md cursor-pointer border transition-colors ${
+                className={`group flex items-center justify-between px-3 py-2.5 text-sm rounded-lg cursor-pointer transition-colors ${
                   isActiveChatId === c._id
-                    ? "bg-sky-100 border-sky-200 text-sky-800"
-                    : "text-gray-700 border-transparent hover:bg-sky-50 hover:border-sky-100"
+                    ? "bg-[var(--violet)]/20 text-white border-l-2 border-[var(--amber)]"
+                    : "text-white/60 hover:bg-white/5 hover:text-white/90 border-l-2 border-transparent"
                 }`}
               >
                 <span className="truncate w-4/5 font-medium">
@@ -173,7 +176,7 @@ const ChatScreen = () => {
                     e.stopPropagation();
                     deleteChat(c._id, isActiveChatId);
                   }}
-                  className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 hover:text-red-500 transition-opacity"
+                  className="w-4 h-4 text-white/30 opacity-0 group-hover:opacity-100 hover:text-red-400 transition-opacity"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -188,21 +191,21 @@ const ChatScreen = () => {
               </div>
             ))
           ) : (
-            <p className="text-xs text-gray-400 px-2">No recent chats</p>
+            <p className="text-xs text-white/30 px-2">No recent chats</p>
           )}
         </div>
 
         {/* Bottom: User Profile */}
-        <div className="p-4 border-t border-gray-200 space-y-3">
+        <div className="p-4 border-t border-white/10 space-y-3">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center font-bold text-sm border border-sky-200">
+            <div className="w-9 h-9 rounded-full bg-[var(--violet)]/20 text-[var(--amber)] flex items-center justify-center font-bold text-sm border border-white/10">
               {userInitial}
             </div>
-            <div>
-              <p className="text-sm font-semibold text-gray-700">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-white truncate">
                 {user.username}
               </p>
-              <p className="text-xs text-gray-500 truncate">{user.email}</p>
+              <p className="text-xs text-white/90 truncate">{user.email}</p>
             </div>
           </div>
           <button
@@ -214,7 +217,7 @@ const ChatScreen = () => {
                 console.error(logoutError);
               }
             }}
-            className="w-full rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white hover:bg-red-600 transition"
+            className="w-full rounded-lg bg-white/5 hover:bg-red-500/20 border border-white/10 hover:border-red-500/40 px-4 py-2 text-sm font-semibold text-white/70 hover:text-red-300 transition"
           >
             Logout
           </button>
@@ -224,13 +227,13 @@ const ChatScreen = () => {
       {/* 🎯 MAIN CONTENT AREA */}
       <main className="flex-1 flex flex-col relative w-full h-full">
         {/* Header for mobile */}
-        <header className="h-14 bg-white border-b border-gray-200 flex items-center justify-between px-4 shadow-sm md:hidden shrink-0">
-          <span className="font-bold text-xl text-sky-600 tracking-tight">
-            Perplexity Ai
+        <header className="h-14 bg-[var(--ink)] flex items-center justify-between px-4 shadow-sm md:hidden shrink-0">
+          <span className="font-display text-xl text-white tracking-tight">
+            KNOW <span className="text-[var(--amber)]">AI</span>
           </span>
           <button
             onClick={() => setIsSidebarOpen(true)}
-            className="text-gray-600 hover:text-sky-500 focus:outline-none"
+            className="text-white/70 hover:text-white focus:outline-none"
           >
             <svg
               className="w-7 h-7"
@@ -251,12 +254,17 @@ const ChatScreen = () => {
         {/* Chat Messages Display */}
         <div className="flex-1 overflow-y-scroll scroll-smooth p-4 md:p-8 max-w-4xl mx-auto w-full h-[calc(100vh-120px)] overflow-x-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {!messages || messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-center space-y-4 pt-10">
-              <h1 className="text-3xl md:text-5xl font-bold text-gray-800 tracking-tight">
-                What do you want to <span className="text-sky-500">know?</span>
+            <div className="flex flex-col items-center justify-center h-full text-center space-y-4 pt-10 animate-fade-up">
+              <span className="font-mono-label text-xs tracking-[0.2em] text-[var(--violet)] uppercase">
+                Ask anything
+              </span>
+              <h1 className="font-display text-3xl md:text-5xl text-[var(--ink)] tracking-tight">
+                What do you want to{" "}
+                <span className="italic text-[var(--violet)]">know?</span>
               </h1>
-              <p className="text-gray-500 text-lg">
-                Ask anything to search, synthesize, and get direct answers.
+              <p className="text-[var(--ink-soft)] text-base md:text-lg max-w-md">
+                Ask anything to search, synthesize, and get direct, sourced
+                answers.
               </p>
             </div>
           ) : (
@@ -264,31 +272,36 @@ const ChatScreen = () => {
               {messages.map((msg, index) => (
                 <div
                   key={index}
-                  className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                  className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} animate-fade-up`}
                 >
-                  <div
-                    className={`p-4 max-w-[85%] md:max-w-[80%] rounded-2xl ${
-                      msg.role === "user"
-                        ? "bg-sky-100 text-sky-900 rounded-br-none"
-                        : "bg-white border border-gray-200 text-gray-800 rounded-bl-none shadow-sm overflow-hidden"
-                    }`}
-                  >
-                    {msg.role === "user" ? (
-                      formatMessage(msg.content)
-                    ) : (
-                      <div className="prose prose-sm max-w-none text-gray-800 overflow-x-auto">
+                  {msg.role === "user" ? (
+                    <div className="p-4 max-w-[85%] md:max-w-[80%] rounded-2xl rounded-br-md bg-[var(--violet)] text-white shadow-lg shadow-[var(--violet)]/15">
+                      {formatMessage(msg.content)}
+                    </div>
+                  ) : (
+                    <div className="p-4 max-w-[85%] md:max-w-[80%] rounded-2xl rounded-bl-md bg-white border border-[var(--line)] border-l-4 border-l-[var(--amber)] shadow-sm overflow-hidden">
+                      <div className="prose prose-sm max-w-none text-[var(--ink)] overflow-x-auto">
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>
                           {formatMessage(msg.content)}
                         </ReactMarkdown>
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               ))}
               {isLoading && (
                 <div className="flex justify-start">
-                  <div className="p-4 bg-white border border-gray-200 rounded-2xl rounded-bl-none shadow-sm text-gray-500 animate-pulse">
-                    AI is thinking...
+                  <div className="flex items-center gap-2 p-4 bg-white border border-[var(--line)] border-l-4 border-l-[var(--amber)] rounded-2xl rounded-bl-md shadow-sm text-[var(--ink-soft)]">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[var(--violet)] animate-node" />
+                    <span
+                      className="w-1.5 h-1.5 rounded-full bg-[var(--violet)] animate-node"
+                      style={{ animationDelay: "0.2s" }}
+                    />
+                    <span
+                      className="w-1.5 h-1.5 rounded-full bg-[var(--violet)] animate-node"
+                      style={{ animationDelay: "0.4s" }}
+                    />
+                    <span className="text-sm ml-1">Synthesizing…</span>
                   </div>
                 </div>
               )}
@@ -297,14 +310,14 @@ const ChatScreen = () => {
         </div>
 
         {/* ⌨️ INPUT AREA */}
-        <div className="p-4 md:p-6 w-full max-w-4xl mx-auto sticky bottom-0 bg-gray-100 bg-opacity-95 backdrop-blur-md z-30 shrink-0">
-          <div className="relative border border-gray-300 rounded-xl shadow-lg bg-white focus-within:border-sky-400 focus-within:ring-4 focus-within:ring-sky-100 transition-all">
+        <div className="p-4 md:p-6 w-full max-w-4xl mx-auto sticky bottom-0 bg-[var(--paper)]/95 backdrop-blur-md z-30 shrink-0">
+          <div className="relative border border-[var(--line)] rounded-2xl shadow-lg bg-white focus-within:border-[var(--violet)] focus-within:ring-4 focus-within:ring-[var(--violet)]/10 transition-all">
             <textarea
               id="chat-input"
               name="chatInput"
-              className="w-full bg-transparent p-4 pr-16 text-gray-800 outline-none resize-none font-medium [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+              className="w-full bg-transparent p-4 pr-16 text-[var(--ink)] outline-none resize-none font-medium [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
               rows="2"
-              placeholder="Ask anything..."
+              placeholder="Ask anything…"
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -313,7 +326,7 @@ const ChatScreen = () => {
             <button
               onClick={handleSend}
               disabled={isLoading || !chatInput.trim()}
-              className="absolute right-3 bottom-3 p-2 bg-sky-500 hover:bg-sky-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg transition-colors shadow-md cursor-pointer"
+              className="absolute right-3 bottom-3 p-2.5 bg-[var(--violet)] hover:bg-[var(--violet-deep)] disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-xl transition-colors shadow-md cursor-pointer"
             >
               <svg
                 className="w-5 h-5"
@@ -330,15 +343,13 @@ const ChatScreen = () => {
               </svg>
             </button>
           </div>
-          <div className="relative flex justify-between items-center mt-3 text-xs text-gray-500 font-medium px-2 hidden md:flex">
-            <span className="absolute right-0">
-              Use Shift + Enter for new line
-            </span>
+          <div className="relative flex justify-between items-center mt-3 text-xs text-[var(--ink-soft)] font-mono-label px-2 hidden md:flex">
+            <span className="absolute right-0">Shift + Enter for new line</span>
           </div>
         </div>
       </main>
 
-      {/* 🎯 GLOBAL SEARCH MODAL YAHAN ATTACH KIYA HAI */}
+      {/* 🎯 GLOBAL SEARCH MODAL */}
       <GlobalSearchModal
         isOpen={isGlobalSearchOpen}
         onClose={() => setIsGlobalSearchOpen(false)}

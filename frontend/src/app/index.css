@@ -1,6 +1,49 @@
 @import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap");
+
+:root {
+  --ink: #12131a;
+  --ink-soft: #6b6c7e;
+  --paper: #f3f4f8;
+  --violet: #5b4fe9;
+  --violet-deep: #3b2fa6;
+  --amber: #e8a33d;
+  --line: #e4e4ec;
+}
+
+.font-display {
+  font-family: "Fraunces", serif;
+}
+.font-mono-label {
+  font-family: "JetBrains Mono", monospace;
+}
 
 @keyframes shrink {
   from { width: 100%; }
   to { width: 0%; }
+}
+
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulseNode {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(232, 163, 61, 0.5); }
+  50% { box-shadow: 0 0 0 6px rgba(232, 163, 61, 0); }
+}
+
+@keyframes orbDrift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-20px, 15px) scale(1.05); }
+}
+
+.animate-fade-up {
+  animation: fadeSlideUp 0.5s ease-out both;
+}
+.animate-orb {
+  animation: orbDrift 10s ease-in-out infinite;
+}
+.animate-node {
+  animation: pulseNode 2.2s ease-in-out infinite;
 }
