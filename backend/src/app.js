@@ -27,6 +27,11 @@ app.use(cors({
     credentials: true
 }));
 
+// CRON JOB HEALTH CHECK ROUTE  
+app.get('/ping', (req, res) => {
+    res.status(200).send('Perplexity Clone Backend is Alive and Running! 🚀');
+});
+
 // routers
 app.use("/api/auth", authRouter)
 app.use("/api/chats",chatRouter)
