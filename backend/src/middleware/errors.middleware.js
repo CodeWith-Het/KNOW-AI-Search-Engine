@@ -12,7 +12,7 @@ const errorHandle = (err, req, res, next) => {
         response.errorCode=err.errorCode
     }
  
-    if (process.env.NODE_ENV == "development") {
+    if (process.env.NODE_ENV == "production") {
       response.stack = err.stack;
     }
 
