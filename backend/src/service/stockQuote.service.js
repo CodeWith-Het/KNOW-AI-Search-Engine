@@ -1,12 +1,40 @@
-import YahooFinance from "yahoo-finance2";
+import axios from "axios";
 import redis from "../config/redis.js";
 
-const yahooFinance = new YahooFinance({ suppressNotices: ["yahooSurvey"] });
-
+const BASE_URL = "https://api.twelvedata.com";
 const CACHE_TTL_SECONDS = 30;
 
-// Isse actual structured price data milta hai — JS-rendered numbers text-crawl
-// se nahi milte, isliye search ke bajaye ye dedicated API use karte hain
+const fetchQuote = async (symbol, exchange) => {
+  const params = {
+    symbol,
+    apikey: process.env.TWELVE_DATA_API_KEY,
+  };
+  if (exchange) params.exchange = exchange;
+
+  const { data } = await axios.get(`${BASE_URL}/quote`, {
+    params,
+    timeout: 8000,
+  });
+
+  // Twelve Data error responses look like { code, message, status: "error" }
+  if (!data || data.status === "error" || !data.close) return null;
+  return data;
+};
+
+// Agar direct symbol se quote na mile, Twelve Data ke apne symbol search
+// se sahi symbol/exchange resolve karo (jaisa Tata Motors demerger case tha)
+const resolveSymbol = async (query) => {
+  const { data } = await axios.get(`${BASE_URL}/symbol_search`, {
+    params: { symbol: query, apikey: process.env.TWELVE_DATA_API_KEY },
+    timeout: 8000,
+  });
+
+  const bestMatch = data?.data?.[0];
+  return bestMatch
+    ? { symbol: bestMatch.symbol, exchange: bestMatch.exchange }
+    : null;
+};
+
 export const getStockQuote = async (query) => {
   const cacheKey = `stockQuote:${query.trim().toLowerCase()}`;
 
@@ -18,48 +46,36 @@ export const getStockQuote = async (query) => {
   }
 
   try {
-    let symbol = query;
-    let quote = null;
+    let quote = await fetchQuote(query);
 
-    try {
-      quote = await yahooFinance.quote(symbol);
-    } catch {
-      quote = null;
-    }
-
-    if (!quote || quote.regularMarketPrice == null) {
-      const searchResults = await yahooFinance.search(query);
-      const bestMatch = searchResults?.quotes?.find(
-        (q) => q.symbol && (q.quoteType === "EQUITY" || q.quoteType === "CRYPTOCURRENCY"),
-      );
-
-      if (bestMatch?.symbol) {
-        symbol = bestMatch.symbol;
-        quote = await yahooFinance.quote(symbol);
+    if (!quote) {
+      const resolved = await resolveSymbol(query);
+      if (resolved) {
+        quote = await fetchQuote(resolved.symbol, resolved.exchange);
       }
     }
 
-    if (!quote || quote.regularMarketPrice == null) {
+    if (!quote) {
       return { found: false, ticker: query };
     }
 
-    const data = {
+    const result = {
       found: true,
       symbol: quote.symbol,
-      name: quote.longName || quote.shortName || quote.symbol,
-      price: quote.regularMarketPrice,
+      name: quote.name,
+      price: parseFloat(quote.close),
       currency: quote.currency,
-      marketState: quote.marketState,
-      asOf: quote.regularMarketTime,
+      exchange: quote.exchange,
+      asOf: quote.datetime,
     };
 
     try {
-      await redis.set(cacheKey, JSON.stringify(data), "EX", CACHE_TTL_SECONDS);
+      await redis.set(cacheKey, JSON.stringify(result), "EX", CACHE_TTL_SECONDS);
     } catch (cacheError) {
       console.error("Stock quote cache write error:", cacheError.message);
     }
 
-    return data;
+    return result;
   } catch (error) {
     console.error("Stock quote error:", error.message);
     return { found: false, ticker: query, error: error.message };
