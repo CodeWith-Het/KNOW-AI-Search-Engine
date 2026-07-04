@@ -90,7 +90,7 @@ const Login = () => {
                   style={{ animationDelay: `${i * 0.4}s` }}
                 />
                 {i !== citationNotes.length - 1 && (
-                  <span className="w-px h-10 bg-white/15 mt-2" />
+                  <span className="w-px h-10 bg-white/35 mt-2" />
                 )}
               </div>
               <p className="text-white/70 text-sm leading-relaxed pt-0.5">

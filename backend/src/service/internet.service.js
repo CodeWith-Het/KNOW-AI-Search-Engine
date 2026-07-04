@@ -1,18 +1,28 @@
-import { tavily as Tavily} from "@tavily/core";
+import { tavily as Tavily } from "@tavily/core";
 
 const tavily = Tavily({
-        apiKey: process.env.TAVILY_API_KEY,
+  apiKey: process.env.TAVILY_API_KEY,
 });
-    
-export const searchInternet = async (query) => {
-    try {
-        const result =  await tavily.search(query, {
-            maxResults: 3,
-            searchDepth: "advanced",
-        });
-        return JSON.stringify(result);
-    } catch (error) {
-        console.error("Error searching Tavily:", error);
-        throw error;
-    }
-}
+
+export const searchInternet = async (query, options = {}) => {
+  try {
+    const result = await tavily.search(query, {
+      maxResults: 3,
+      searchDepth: "advanced",
+      // 👇 agent ab per-query decide karega ye dono, defaults fallback hain
+      topic: options.topic || "general",
+      timeRange: options.timeRange || "week",
+    });
+
+    // 🔍 TEMPORARY DEBUG — isse dekhenge Tavily actually kya wapas de raha hai
+    console.log("=== TAVILY RAW RESPONSE ===");
+    console.log("Query:", query, "| Options:", options);
+    console.log(JSON.stringify(result, null, 2));
+    console.log("=== END TAVILY RESPONSE ===");
+
+    return JSON.stringify(result);
+  } catch (error) {
+    console.error("Error searching Tavily:", error);
+    throw error;
+  }
+};

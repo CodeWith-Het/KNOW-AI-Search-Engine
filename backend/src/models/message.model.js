@@ -15,6 +15,16 @@ const messageSchemaModel = new mongoose.Schema({
         type: String,
         enum: ["user", "ai"],
         required:true
+    },
+    citations: {
+      type: [
+        {
+          id: Number,
+          title: String,
+          url: String,
+        },
+      ],
+      default: [],
     }
 },
     {

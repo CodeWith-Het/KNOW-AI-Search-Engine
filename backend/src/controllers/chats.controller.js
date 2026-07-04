@@ -31,11 +31,12 @@ export const sendMessage = async (req, res, next) => {
 
     const messages = await messageModel.find({ chat: createdChatId });
         
-    const aiResponse = await generateResponse(messages)
+    const { answer, citations } = await generateResponse(messages)
 
     const aiMessage = await messageModel.create({
         chat: createdChatId,
-        content: aiResponse,
+        content: answer,
+        citations,
         role:"ai"
     })
 

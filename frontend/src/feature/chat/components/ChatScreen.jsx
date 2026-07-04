@@ -15,6 +15,32 @@ const formatMessage = (content) => {
     : JSON.stringify(content);
 };
 
+// Helper function: [1], [2] jaise citation markers ko clickable badges mein badalne ke liye
+const renderWithCitations = (text, citations = []) => {
+  if (!citations.length) return text;
+
+  return text.split(/(\[\d+\])/g).map((part, i) => {
+    const match = part.match(/^\[(\d+)\]$/);
+    if (!match) return part;
+
+    const citation = citations.find((c) => c.id === Number(match[1]));
+    if (!citation) return part;
+
+    return (
+      <a
+        key={i}
+        href={citation.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        title={citation.title}
+        className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[var(--violet)]/15 text-[var(--violet)] text-[10px] font-bold mx-0.5 align-middle hover:bg-[var(--violet)]/25 no-underline"
+      >
+        {match[1]}
+      </a>
+    );
+  });
+};
+
 const ChatScreen = () => {
   const [chatInput, setChatInput] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -95,8 +121,8 @@ const ChatScreen = () => {
 
         {/* Brand */}
         <div className="px-5 pt-6 pb-2 hidden md:block">
-          <span className="font-mono-label text-2XL tracking-[0.2em] text-[var(--amber)] uppercase">
-            KNOW AI
+          <span className="font-mono-label text-[10px] tracking-[0.2em] text-[var(--amber)] uppercase">
+            Perplexity AI
           </span>
         </div>
 
@@ -205,7 +231,7 @@ const ChatScreen = () => {
               <p className="text-sm font-semibold text-white truncate">
                 {user.username}
               </p>
-              <p className="text-xs text-white/90 truncate">{user.email}</p>
+              <p className="text-xs text-white/40 truncate">{user.email}</p>
             </div>
           </div>
           <button
@@ -229,7 +255,7 @@ const ChatScreen = () => {
         {/* Header for mobile */}
         <header className="h-14 bg-[var(--ink)] flex items-center justify-between px-4 shadow-sm md:hidden shrink-0">
           <span className="font-display text-xl text-white tracking-tight">
-            KNOW <span className="text-[var(--amber)]">AI</span>
+            Perplexity <span className="text-[var(--amber)]">AI</span>
           </span>
           <button
             onClick={() => setIsSidebarOpen(true)}
@@ -281,10 +307,46 @@ const ChatScreen = () => {
                   ) : (
                     <div className="p-4 max-w-[85%] md:max-w-[80%] rounded-2xl rounded-bl-md bg-white border border-[var(--line)] border-l-4 border-l-[var(--amber)] shadow-sm overflow-hidden">
                       <div className="prose prose-sm max-w-none text-[var(--ink)] overflow-x-auto">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            p: ({ children }) => (
+                              <p>
+                                {React.Children.map(children, (child) =>
+                                  typeof child === "string"
+                                    ? renderWithCitations(child, msg.citations)
+                                    : child,
+                                )}
+                              </p>
+                            ),
+                          }}
+                        >
                           {formatMessage(msg.content)}
                         </ReactMarkdown>
                       </div>
+
+                      {/* 📚 Sources list — sirf tab dikhta hai jab citations available hon */}
+                      {msg.citations && msg.citations.length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-[var(--line)] space-y-1.5">
+                          <p className="font-mono-label text-[10px] text-[var(--ink-soft)] uppercase tracking-widest mb-2">
+                            Sources
+                          </p>
+                          {msg.citations.map((c) => (
+                            <a
+                              key={c.id}
+                              href={c.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-start gap-2 text-xs text-[var(--ink-soft)] hover:text-[var(--violet)] transition-colors"
+                            >
+                              <span className="shrink-0 w-4 h-4 rounded-full bg-[var(--violet)]/10 text-[var(--violet)] text-[9px] font-bold flex items-center justify-center mt-0.5">
+                                {c.id}
+                              </span>
+                              <span className="truncate">{c.title}</span>
+                            </a>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

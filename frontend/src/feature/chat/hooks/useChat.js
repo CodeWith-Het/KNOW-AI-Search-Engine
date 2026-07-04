@@ -53,7 +53,11 @@ export const useChat = () => {
 
             const response = await sendMessageApi({ message: text, chat: currentChatId });
 
-            dispatch(addNewMessages({ role: 'ai', content: response.aiMessage.content }));
+            dispatch(addNewMessages({
+                role: 'ai',
+                content: response.aiMessage.content,
+                citations: response.aiMessage.citations || [],
+            }));
 
             if (!currentChatId && response.chatId) {
                 dispatch(setActiveChatId(response.chatId));
