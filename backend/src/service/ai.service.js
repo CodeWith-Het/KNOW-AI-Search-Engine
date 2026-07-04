@@ -31,12 +31,12 @@ const stockQuoteTool = tool(
   {
     name: "stockQuoteTool",
     description:
-      "Use this to get the EXACT live price of a stock, index, or cryptocurrency. You can pass either a ticker symbol (e.g. 'AAPL', 'BTC-USD', 'TATAMOTORS.NS') or just the plain company name (e.g. 'Tata Motors', 'Apple') — this tool will auto-resolve the correct current ticker even if the company recently renamed or demerged. ALWAYS use this instead of searchInternetTool whenever the user asks for a stock/crypto/index price.",
+      "Use this to get the EXACT live price of a stock, index, or cryptocurrency. You can pass a ticker symbol (e.g. 'AAPL', 'BTC/USD', 'TATAMOTORS') or just the plain company name (e.g. 'Tata Motors', 'Apple') — this tool will auto-resolve the correct current ticker even if the company recently renamed or demerged. ALWAYS use this instead of searchInternetTool whenever the user asks for a stock/crypto/index price.",
     schema: z.object({
       ticker: z
         .string()
         .describe(
-          "A ticker symbol OR a plain company name, e.g. 'TATAMOTORS.NS', 'BTC-USD', or 'Tata Motors'",
+          "A ticker symbol OR a plain company name, e.g. 'AAPL', 'BTC/USD', or 'Tata Motors'",
         ),
     }),
   },
