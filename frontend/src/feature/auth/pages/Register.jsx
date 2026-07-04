@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../hook/useAuth";
 import { useSelector } from "react-redux";
@@ -11,7 +11,6 @@ const citationNotes = [
 ];
 
 const fields = ["username", "email", "password"];
-const AUTO_REDIRECT_SECONDS = 10;
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -24,24 +23,12 @@ const Register = () => {
   const [registered, setRegistered] = useState(false);
   const [resendMessage, setResendMessage] = useState("");
   const [resending, setResending] = useState(false);
-  const [secondsLeft, setSecondsLeft] = useState(AUTO_REDIRECT_SECONDS);
 
   const { registerUser, resendVerificationEmail } = useAuth();
   const navigate = useNavigate();
 
   const user = useSelector((state) => state.auth.user);
   const loading = useSelector((state) => state.auth.loading);
-
-  // Registration succeed hone ke baad ek live countdown chalta hai, 0 pe login redirect
-  useEffect(() => {
-    if (!registered) return;
-    if (secondsLeft <= 0) {
-      navigate("/login", { replace: true });
-      return;
-    }
-    const tick = setTimeout(() => setSecondsLeft((s) => s - 1), 1000);
-    return () => clearTimeout(tick);
-  }, [registered, secondsLeft, navigate]);
 
   if (user && !loading && !registered) {
     return <Navigate to="/" replace />;
@@ -88,7 +75,6 @@ const Register = () => {
     try {
       await resendVerificationEmail(formData.email);
       setResendMessage("Verification email resent.");
-      setSecondsLeft(AUTO_REDIRECT_SECONDS);
     } catch (error) {
       setResendMessage(error.message || "Unable to resend verification email.");
     } finally {
@@ -290,24 +276,6 @@ const Register = () => {
                   {resending ? "Resending…" : "Didn't get it? Resend email"}
                 </button>
               </div>
-
-              <p className="mt-5 font-mono-label text-xs text-[var(--ink-soft)]">
-                Redirecting to sign in in{" "}
-                <span className="font-semibold text-[var(--ink)]">
-                  {secondsLeft}s
-                </span>
-              </p>
-            </div>
-
-            {/* countdown rail, uses the shrink keyframe, restarts key on resend */}
-            <div className="h-1 w-full bg-[var(--line)]">
-              <div
-                key={secondsLeft === AUTO_REDIRECT_SECONDS ? "reset" : "run"}
-                className="h-full bg-[var(--amber)]"
-                style={{
-                  animation: `shrink ${AUTO_REDIRECT_SECONDS}s linear forwards`,
-                }}
-              />
             </div>
           </div>
         </div>

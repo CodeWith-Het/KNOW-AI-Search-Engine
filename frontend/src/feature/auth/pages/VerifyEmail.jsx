@@ -14,7 +14,7 @@ const VerifyEmail = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const status = searchParams.get("status"); // "success" | "error"
+  const status = searchParams.get("status"); 
   const username = searchParams.get("username");
   const already = searchParams.get("already") === "true";
   const reason = searchParams.get("reason");
