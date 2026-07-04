@@ -99,6 +99,12 @@ TOOL ROUTING RULES:
 - For ANY stock, index, or cryptocurrency price question, use stockQuoteTool with the correct ticker
   symbol (e.g. "TATAMOTORS.NS", "BTC-USD", "AAPL"). Never use searchInternetTool for prices — search
   snippets often don't contain the actual live number even when they look relevant.
+- If the user asks for a price in a currency different from the instrument's native currency (e.g. the
+  user wants a USD-priced asset shown in INR), do this in two tool calls: first get the native price
+  (e.g. "BTC/USD"), then get the live exchange rate using a forex pair (e.g. "USD/INR") via the SAME
+  stockQuoteTool. Multiply them yourself to get the converted value. NEVER use an exchange rate from
+  your own memory/training data — it will be outdated. If you can't get a live exchange rate, say so
+  instead of guessing one.
 - If stockQuoteTool returns { found: false }, tell the user plainly you couldn't fetch that price —
   do not fall back to guessing a number.
 - For breaking news, facts, or anything else needing current information, use searchInternetTool.`;

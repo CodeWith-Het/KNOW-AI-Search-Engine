@@ -11,28 +11,69 @@ const fetchQuote = async (symbol, exchange) => {
   };
   if (exchange) params.exchange = exchange;
 
-  const { data } = await axios.get(`${BASE_URL}/quote`, {
-    params,
-    timeout: 8000,
-  });
+  try {
+    const { data } = await axios.get(`${BASE_URL}/quote`, {
+      params,
+      timeout: 8000,
+    });
 
-  // Twelve Data error responses look like { code, message, status: "error" }
-  if (!data || data.status === "error" || !data.close) return null;
-  return data;
+    if (!data || data.status === "error" || !data.close) return null;
+    return data;
+  } catch (error) {
+    console.error(
+      "Twelve Data /quote error:",
+      symbol,
+      error.response?.data?.message || error.message,
+    );
+    return null;
+  }
 };
 
 // Agar direct symbol se quote na mile, Twelve Data ke apne symbol search
 // se sahi symbol/exchange resolve karo (jaisa Tata Motors demerger case tha)
 const resolveSymbol = async (query) => {
-  const { data } = await axios.get(`${BASE_URL}/symbol_search`, {
-    params: { symbol: query, apikey: process.env.TWELVE_DATA_API_KEY },
-    timeout: 8000,
-  });
+  try {
+    const { data } = await axios.get(`${BASE_URL}/symbol_search`, {
+      params: { symbol: query, apikey: process.env.TWELVE_DATA_API_KEY },
+      timeout: 8000,
+    });
 
-  const bestMatch = data?.data?.[0];
-  return bestMatch
-    ? { symbol: bestMatch.symbol, exchange: bestMatch.exchange }
-    : null;
+    const bestMatch = data?.data?.[0];
+    return bestMatch
+      ? { symbol: bestMatch.symbol, exchange: bestMatch.exchange }
+      : null;
+  } catch (error) {
+    console.error(
+      "Twelve Data /symbol_search error:",
+      query,
+      error.response?.data?.message || error.message,
+    );
+    return null;
+  }
+};
+
+// "BTC/USD" jaisa symbol tod ke { base: "BTC", quoteCurrency: "USD" } deta hai
+const parsePair = (symbol) => {
+  const match = symbol?.match(/^([A-Za-z0-9.]+)\/([A-Za-z]{3})$/);
+  return match ? { base: match[1], quoteCurrency: match[2].toUpperCase() } : null;
+};
+
+// Twelve Data ke "Synthetic" exchange wale cross-currency pairs (jaise BTC/INR)
+// kabhi kabhi galat/buggy data dete hain. Isliye unpe bharosa nahi karte —
+// hamesha USD ke through khud recompute karte hain (base/USD * USD/target)
+const recomputeViaUsd = async (quote) => {
+  if (quote.exchange !== "Synthetic") return quote;
+
+  const pair = parsePair(quote.symbol);
+  if (!pair || pair.quoteCurrency === "USD") return quote;
+
+  const usdQuote = await fetchQuote(`${pair.base}/USD`);
+  const fxQuote = await fetchQuote(`USD/${pair.quoteCurrency}`);
+
+  if (!usdQuote || !fxQuote) return quote; // fallback: original (possibly wrong) value
+
+  const recomputedPrice = parseFloat(usdQuote.close) * parseFloat(fxQuote.close);
+  return { ...quote, close: recomputedPrice.toFixed(2), recomputed: true };
 };
 
 export const getStockQuote = async (query) => {
@@ -58,6 +99,8 @@ export const getStockQuote = async (query) => {
     if (!quote) {
       return { found: false, ticker: query };
     }
+
+    quote = await recomputeViaUsd(quote);
 
     const result = {
       found: true,
