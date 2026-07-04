@@ -15,6 +15,7 @@ import errorHandle from './middleware/errors.middleware.js';
 const app = express();
 
 // middleware
+app.set("trust proxy",1)
 app.use(express.json())
 app.use(cookieParser())
 app.use(morgan("dev"))
@@ -23,7 +24,7 @@ app.use(cors({
         "http://localhost:5173",
         process.env.FRONTEND_URL
     ],
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE","PATCH"],
     credentials: true
 }));
 
