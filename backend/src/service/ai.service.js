@@ -77,8 +77,24 @@ const mistraAiModel = new ChatMistralAI({
 });
 
 // Citation instructions ab system prompt ka hissa hain
-const AGENT_SYSTEM_PROMPT = `You are a smart AI research agent. You have one main power: you can search
+// Function banaya taaki har request pe AAJ ki real date fresh inject ho —
+// warna model kabhi kabhi galat saal assume kar leta hai (jaise 2025 bol dena
+// jab asal mein 2026 chal raha ho), jisse date ranges wale answers galat ho jate hain
+const getSystemPrompt = () => {
+  const today = new Date().toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
+  return `You are a smart AI research agent. You have one main power: you can search
 the internet using the search tool to research any latest topic. Use it wisely based on user requests.
+
+TODAY'S DATE IS: ${today}. Always use THIS exact date (and year) when calculating "latest", "this week",
+"past N days", or any relative date range. NEVER guess or assume the year from your own training data —
+use the year given above, even if it feels unfamiliar. Double-check every date range you write against
+this date before finalizing your answer.
 
 CITATION RULES — follow these exactly:
 1. Only add citation markers for facts that came from searchInternetTool — NEVER add a [n] marker for
@@ -119,12 +135,13 @@ SEARCH QUERY QUALITY RULES:
   giving up.
 - Never treat a search result as relevant just because it superficially mentions a matching name/keyword
   — check that the actual content answers the question.`;
+};
 
 // 🎯 Agent
 const agent = createAgent({
-  model: mistraAiModel,
+  model: geminiModel,
   tools: [searchInternetTool, stockQuoteTool],
-  systemPrompt: AGENT_SYSTEM_PROMPT,
+  systemPrompt: getSystemPrompt(),
 });
 
 // Content kabhi kabhi array-of-blocks ya object ban ke aata hai (LangChain
@@ -148,7 +165,7 @@ const normalizeContent = (content) => {
 export const generateResponse = async (messages) => {
   try {
     const response = await agent.invoke({
-      systemPrompt: AGENT_SYSTEM_PROMPT,
+      systemPrompt: getSystemPrompt(),
       messages: messages
         .map((msg) => {
           const content = normalizeContent(msg.content);
@@ -209,7 +226,7 @@ export const streamAgentResponse = async (messages, onToken, onStatus) => {
   try {
     const eventStream = await agent.streamEvents(
       {
-        systemPrompt: AGENT_SYSTEM_PROMPT,
+        systemPrompt: getSystemPrompt(),
         messages: messages
           .map((msg) => {
             const content = normalizeContent(msg.content);
