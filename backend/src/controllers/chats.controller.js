@@ -32,14 +32,15 @@ export const sendMessage = async (req, res, next) => {
     const messages = await messageModel.find({ chat: createdChatId });
         
     const { answer, citations } = await generateResponse(messages)
-        
-    const safeAnswer = answer?.trim()
-    ? answer: "I couldn't generate a response for that. Please try rephrasing your question."
 
+    // Khaali answer kabhi save nahi hona chahiye (agle turn ki history todta hai)
+    const safeAnswer = answer?.trim()
+        ? answer
+        : "I couldn't generate a response for that. Please try rephrasing your question."
 
     const aiMessage = await messageModel.create({
         chat: createdChatId,
-        content: answer,
+        content: safeAnswer,
         citations,
         role:"ai"
     })
@@ -62,22 +63,24 @@ export const sendMessageStream = async (req, res, next) => {
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
     res.flushHeaders();
- 
+
     // Chhota helper — har event ko SSE ke sahi format mein bhejta hai
     const sendEvent = (payload) => {
         res.write(`data: ${JSON.stringify(payload)}\n\n`);
     };
- 
+
+    let createdChatId;
+
     try {
         const { message, chat: chatId } = req.body;
- 
+
         if (!message) {
             sendEvent({ type: "error", message: "Message is required" });
             return res.end();
         }
- 
-        let createdChatId = chatId;
- 
+
+        createdChatId = chatId;
+
         if (!chatId) {
             const title = await generateChatTitle(message);
             const newChatData = await chatModel.create({
@@ -85,38 +88,58 @@ export const sendMessageStream = async (req, res, next) => {
                 title,
             });
             createdChatId = newChatData._id;
- 
-            sendEvent({ type: "meta", chatId: createdChatId })
+
+            sendEvent({ type: "meta", chatId: createdChatId });
         }
- 
+
         await messageModel.create({
             chat: createdChatId,
             content: message,
             role: "user",
         });
- 
+
         const messages = await messageModel.find({ chat: createdChatId });
- 
+
         const { fullAnswer, citations } = await streamAgentResponse(
             messages,
             (token) => sendEvent({ type: "token", text: token }),
             (status) => sendEvent({ type: "status", text: status }),
         );
 
-        const safeAnswer = fullAnswer?.trim() ? fullAnswer: "I couldn't generate a response for that. Please try rephrasing your question.";
- 
+        // Khaali answer kabhi DB mein save nahi hona chahiye — warna agle
+        // turn pe LLM API isse reject kar degi (empty assistant message)
+        const safeAnswer = fullAnswer?.trim()
+            ? fullAnswer
+            : "I couldn't generate a response for that. Please try rephrasing your question.";
+
         await messageModel.create({
             chat: createdChatId,
-            content: fullAnswer,
+            content: safeAnswer,
             citations,
             role: "ai",
         });
- 
+
         sendEvent({ type: "citations", citations });
         sendEvent({ type: "done" });
         res.end();
     } catch (error) {
         console.error("Stream error:", error.message);
+
+        // messageModel mein fallback save karne ki koshish karo taaki user ko pata chale ki kuch hua hai
+        try {
+            if (createdChatId) {
+                await messageModel.create({
+                    chat: createdChatId,
+                    content:
+                        "Sorry, I ran into an error while processing that. Please try asking again.",
+                    citations: [],
+                    role: "ai",
+                });
+            }
+        } catch (saveError) {
+            console.error("Fallback save error:", saveError.message);
+        }
+
         sendEvent({ type: "error", message: error.message });
         res.end();
     }
