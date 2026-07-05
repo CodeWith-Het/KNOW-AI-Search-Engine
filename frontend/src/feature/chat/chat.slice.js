@@ -31,11 +31,32 @@ const chatSlice = createSlice({
         addNewMessages: (state, action) => {
             state.messages.push(action.payload)
         },
+        appendToLastMessage: (state, action) => {
+            const lastMessage = state.messages[state.messages.length - 1];
+
+            if (lastMessage?.role === 'ai') {
+                lastMessage.content += action.payload;
+            }
+        },
+        setLastMessageDone: (state) => {
+            const lastMessage = state.messages[state.messages.length - 1];
+
+            if (lastMessage?.role === 'ai') {
+                lastMessage.streaming = false;
+            }
+        },
+        setLastMessageCitations: (state, action) => {
+            const lastMessage = state.messages[state.messages.length - 1];
+
+            if (lastMessage?.role === 'ai') {
+                lastMessage.citations = action.payload;
+            }
+        },
         setError: (state, action) => {
             state.isError=action.payload
         }
     }
 })
 
-export const {setActiveChatId,setLoading,setChats,setMessages,addNewMessages,setClearChat,setError} = chatSlice.actions
+export const {setActiveChatId,setLoading,setChats,setMessages,addNewMessages,appendToLastMessage,setLastMessageDone,setLastMessageCitations,setClearChat,setError} = chatSlice.actions
 export default chatSlice.reducer

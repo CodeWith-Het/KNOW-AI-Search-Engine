@@ -1,4 +1,4 @@
-import { generateChatTitle, generateResponse } from "../service/ai.service.js"
+import { generateChatTitle, generateResponse, streamAgentResponse } from "../service/ai.service.js"
 import chatModel from './../models/chat.model.js';
 import messageModel from './../models/message.model.js';
 import AppError from './../utils/AppError.js';
@@ -51,6 +51,71 @@ export const sendMessage = async (req, res, next) => {
        next(error)
     }
 }
+
+export const sendMessageStream = async (req, res, next) => {
+    // SSE headers response body likhna shuru karne se PEHLE set karne zaroori hain
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.flushHeaders();
+ 
+    // Chhota helper — har event ko SSE ke sahi format mein bhejta hai
+    const sendEvent = (payload) => {
+        res.write(`data: ${JSON.stringify(payload)}\n\n`);
+    };
+ 
+    try {
+        const { message, chat: chatId } = req.body;
+ 
+        if (!message) {
+            sendEvent({ type: "error", message: "Message is required" });
+            return res.end();
+        }
+ 
+        let createdChatId = chatId;
+ 
+        if (!chatId) {
+            const title = await generateChatTitle(message);
+            const newChatData = await chatModel.create({
+                user: req.user.id,
+                title,
+            });
+            createdChatId = newChatData._id;
+ 
+            // Naya chatId turant bhej do — frontend URL update kar sake
+            sendEvent({ type: "meta", chatId: createdChatId });
+        }
+ 
+        await messageModel.create({
+            chat: createdChatId,
+            content: message,
+            role: "user",
+        });
+ 
+        const messages = await messageModel.find({ chat: createdChatId });
+ 
+        const { fullAnswer, citations } = await streamAgentResponse(
+            messages,
+            (token) => sendEvent({ type: "token", text: token }),
+            (status) => sendEvent({ type: "status", text: status }),
+        );
+ 
+        await messageModel.create({
+            chat: createdChatId,
+            content: fullAnswer,
+            citations,
+            role: "ai",
+        });
+ 
+        sendEvent({ type: "citations", citations });
+        sendEvent({ type: "done" });
+        res.end();
+    } catch (error) {
+        console.error("Stream error:", error.message);
+        sendEvent({ type: "error", message: error.message });
+        res.end();
+    }
+};
 
 export const getChats = async (req, res, next)=>{
     try{

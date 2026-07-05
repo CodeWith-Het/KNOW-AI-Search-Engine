@@ -325,6 +325,20 @@ const ChatScreen = () => {
                         </ReactMarkdown>
                       </div>
 
+                      {msg.streaming && (
+                        <div className="mt-2 flex items-center gap-2 text-[var(--ink-soft)]">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[var(--violet)] animate-node" />
+                          <span
+                            className="w-1.5 h-1.5 rounded-full bg-[var(--violet)] animate-node"
+                            style={{ animationDelay: "0.2s" }}
+                          />
+                          <span
+                            className="w-1.5 h-1.5 rounded-full bg-[var(--violet)] animate-node"
+                            style={{ animationDelay: "0.4s" }}
+                          />
+                        </div>
+                      )}
+
                       {/* 📚 Sources list — sirf tab dikhta hai jab citations available hon */}
                       {msg.citations && msg.citations.length > 0 && (
                         <div className="mt-3 pt-3 border-t border-[var(--line)] space-y-1.5">

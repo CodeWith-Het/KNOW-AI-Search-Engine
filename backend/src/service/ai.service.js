@@ -111,7 +111,7 @@ TOOL ROUTING RULES:
 
 // 🎯 Agent
 const agent = createAgent({
-  model: mistraAiModel,
+  model: geminiModel,
   tools: [searchInternetTool, stockQuoteTool],
   systemPrompt: AGENT_SYSTEM_PROMPT,
 });
@@ -185,6 +185,74 @@ export const generateResponse = async (messages) => {
     };
   } catch (error) {
     console.error("gemini Ai Error:", error.message);
+    throw error;
+  }
+};
+
+// 🎯 Streaming version — onToken aur onStatus callbacks se live updates deta hai
+export const streamAgentResponse = async (messages, onToken, onStatus) => {
+  try {
+    const eventStream = await agent.streamEvents(
+      {
+        systemPrompt: AGENT_SYSTEM_PROMPT,
+        messages: messages
+          .map((msg) => {
+            const content = normalizeContent(msg.content);
+            if (msg.role === "user") return new HumanMessage(content);
+            if (msg.role === "ai") return new AIMessage(content);
+            return null;
+          })
+          .filter(Boolean),
+      },
+      { version: "v2" },
+    );
+
+    let fullAnswer = "";
+    const citations = [];
+    const seenUrls = new Set();
+    let citationId = 1;
+
+    for await (const event of eventStream) {
+      // Tool call shuru hote hi status bhejo — achi UX ke liye
+      // ("Using searchInternetTool..." jaisa kuch frontend pe dikha sakte ho)
+      if (event.event === "on_tool_start") {
+        onStatus?.(event.name);
+      }
+
+      // Actual answer ke tokens — final synthesis step se aate hain
+      if (
+    event.event === "on_chat_model_stream" &&
+    event.metadata?.langgraph_node === "model"
+     ) {
+        const token = event.data?.chunk?.content;
+        if (typeof token === "string" && token) {
+          fullAnswer += token;
+          onToken?.(token);
+        }
+      }
+
+      // Search tool ke results se citations nikaalo (jaisa generateResponse mein karte hain)
+      if (event.event === "on_tool_end" && event.name === "searchInternetTool") {
+        try {
+          const parsed = JSON.parse(event.data.output?.content ?? event.data.output);
+          const results = parsed.results || [];
+          for (const r of results) {
+            if (seenUrls.has(r.url)) continue;
+            seenUrls.add(r.url);
+            citations.push({ id: citationId++, title: r.title, url: r.url });
+          }
+        } catch (parseError) {
+          console.error("Streaming citation parse error:", parseError.message);
+        }
+      }
+    }
+
+    return {
+      fullAnswer: normalizeContent(fullAnswer),
+      citations,
+    };
+  } catch (error) {
+    console.error("Streaming agent error:", error.message);
     throw error;
   }
 };
