@@ -32,6 +32,10 @@ export const sendMessage = async (req, res, next) => {
     const messages = await messageModel.find({ chat: createdChatId });
         
     const { answer, citations } = await generateResponse(messages)
+        
+    const safeAnswer = answer?.trim()
+    ? answer: "I couldn't generate a response for that. Please try rephrasing your question."
+
 
     const aiMessage = await messageModel.create({
         chat: createdChatId,
@@ -53,7 +57,7 @@ export const sendMessage = async (req, res, next) => {
 }
 
 export const sendMessageStream = async (req, res, next) => {
-    // SSE headers response body likhna shuru karne se PEHLE set karne zaroori hain
+
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
@@ -82,8 +86,7 @@ export const sendMessageStream = async (req, res, next) => {
             });
             createdChatId = newChatData._id;
  
-            // Naya chatId turant bhej do — frontend URL update kar sake
-            sendEvent({ type: "meta", chatId: createdChatId });
+            sendEvent({ type: "meta", chatId: createdChatId })
         }
  
         await messageModel.create({
@@ -99,6 +102,8 @@ export const sendMessageStream = async (req, res, next) => {
             (token) => sendEvent({ type: "token", text: token }),
             (status) => sendEvent({ type: "status", text: status }),
         );
+
+        const safeAnswer = fullAnswer?.trim() ? fullAnswer: "I couldn't generate a response for that. Please try rephrasing your question.";
  
         await messageModel.create({
             chat: createdChatId,

@@ -152,6 +152,10 @@ export const generateResponse = async (messages) => {
       messages: messages
         .map((msg) => {
           const content = normalizeContent(msg.content);
+          // Khaali AI messages (jo kisi purani buggy/failed stream se DB mein
+          // save ho gayi thi) skip karo — LLM APIs empty assistant content
+          // reject kar dete hain agar tool_calls bhi na ho
+          if (msg.role === "ai" && !content.trim()) return null;
           if (msg.role === "user") return new HumanMessage(content);
           if (msg.role === "ai") return new AIMessage(content);
           return null;
@@ -209,6 +213,7 @@ export const streamAgentResponse = async (messages, onToken, onStatus) => {
         messages: messages
           .map((msg) => {
             const content = normalizeContent(msg.content);
+            if (msg.role === "ai" && !content.trim()) return null;
             if (msg.role === "user") return new HumanMessage(content);
             if (msg.role === "ai") return new AIMessage(content);
             return null;
