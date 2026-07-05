@@ -107,11 +107,22 @@ TOOL ROUTING RULES:
   instead of guessing one.
 - If stockQuoteTool returns { found: false }, tell the user plainly you couldn't fetch that price —
   do not fall back to guessing a number.
-- For breaking news, facts, or anything else needing current information, use searchInternetTool.`;
+- For breaking news, facts, or anything else needing current information, use searchInternetTool.
+
+SEARCH QUERY QUALITY RULES:
+- Make search queries specific, not vague. A vague query like "latest information of Google CEO" returns
+  noisy, unrelated results. Instead search for something concrete: "Sundar Pichai news July 2026" or
+  "Google CEO Sundar Pichai latest statement announcement".
+- After getting search results, check whether they actually address the user's question. If the results
+  are clearly off-topic or unrelated to what was asked, do not present them as the answer — say you
+  couldn't find directly relevant information, or try one more, more specific search query before
+  giving up.
+- Never treat a search result as relevant just because it superficially mentions a matching name/keyword
+  — check that the actual content answers the question.`;
 
 // 🎯 Agent
 const agent = createAgent({
-  model: geminiModel,
+  model: mistraAiModel,
   tools: [searchInternetTool, stockQuoteTool],
   systemPrompt: AGENT_SYSTEM_PROMPT,
 });
@@ -220,10 +231,7 @@ export const streamAgentResponse = async (messages, onToken, onStatus) => {
       }
 
       // Actual answer ke tokens — final synthesis step se aate hain
-      if (
-    event.event === "on_chat_model_stream" &&
-    event.metadata?.langgraph_node === "model"
-     ) {
+      if (event.event === "on_chat_model_stream") {
         const token = event.data?.chunk?.content;
         if (typeof token === "string" && token) {
           fullAnswer += token;

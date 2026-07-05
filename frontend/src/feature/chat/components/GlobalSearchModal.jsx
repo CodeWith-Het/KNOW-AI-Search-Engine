@@ -9,7 +9,7 @@ const GlobalSearchModal = ({ isOpen, onClose }) => {
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const navigate = useNavigate();
 
-const { loadMessages, searchConversations } = useChat()
+  const { loadMessages, searchConversations } = useChat();
 
   // User ke rukne par hi API call hogi
   useEffect(() => {
@@ -23,12 +23,10 @@ const { loadMessages, searchConversations } = useChat()
     const delayDebounce = setTimeout(async () => {
       try {
         const matchChats = await searchConversations(query);
-        setResults(matchChats)
-      }
-      catch (err) {
+        setResults(matchChats);
+      } catch (err) {
         console.error(err);
-      }
-      finally {
+      } finally {
         setLoading(false);
       }
     }, 400);
@@ -53,12 +51,12 @@ const { loadMessages, searchConversations } = useChat()
     }
   };
 
-  // jab koi user chat ko select kare to uska message load ho jaye 
+  // jab koi user chat ko select kare to uska message load ho jaye
   // and search Model close ho jaye
   const handleSelectChat = (chatId) => {
-    loadMessages(chatId); // Us chat ke messages load karo Redux me
-    navigate(`/chat/${chatId}`); // URL badlo taaki ChatScreen load ho jaye
-    onClose(); // Search page band kar do
+    loadMessages(chatId);
+    navigate(`/chat/${chatId}`);
+    onClose();
     setQuery("");
     setSelectedIndex(-1);
   };
@@ -71,11 +69,11 @@ const { loadMessages, searchConversations } = useChat()
       <div className="absolute inset-0" onClick={onClose}></div>
 
       {/* Main Search Container */}
-      <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 w-full max-w-2xl overflow-hidden relative z-10 flex flex-col max-h-[60vh] animate-fade-in">
+      <div className="bg-white rounded-2xl shadow-[0_30px_70px_-20px_rgba(18,19,26,0.35)] border border-[var(--line)] w-full max-w-2xl overflow-hidden relative z-10 flex flex-col max-h-[60vh] animate-fade-up">
         {/* Input Bar */}
-        <div className="flex items-center px-4 py-3.5 border-b border-gray-100">
+        <div className="flex items-center px-4 py-3.5 border-b border-[var(--line)]">
           <svg
-            className="w-5 h-5 text-gray-400 mr-3"
+            className="w-5 h-5 text-[var(--violet)] mr-3 shrink-0"
             fill="none"
             stroke="currentColor"
             strokeWidth="2"
@@ -96,28 +94,43 @@ const { loadMessages, searchConversations } = useChat()
               setSelectedIndex(-1);
             }}
             onKeyDown={handleKeyDown}
-            className="w-full bg-transparent text-gray-800 outline-none text-base font-medium placeholder-gray-400"
+            className="w-full bg-transparent text-[var(--ink)] outline-none text-base font-medium placeholder-[var(--ink-soft)]"
             autoFocus
           />
           <button
             onClick={onClose}
-            className="text-xs font-semibold text-gray-400 hover:text-gray-600 bg-gray-100 px-2 py-1 rounded"
+            className="font-mono-label text-[10px] font-semibold text-[var(--ink-soft)] hover:text-[var(--ink)] bg-[var(--paper)] border border-[var(--line)] px-2 py-1 rounded shrink-0"
           >
             ESC
           </button>
         </div>
 
         {/* Results Box */}
-        <div className="flex-1 overflow-y-auto p-2">
+        <div className="flex-1 overflow-y-auto p-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {loading && (
-            <div className="p-4 text-center text-sm text-gray-400 animate-pulse">
-              Searching matching history...
+            <div className="flex items-center justify-center gap-2 p-6 text-sm text-[var(--ink-soft)]">
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--violet)] animate-node" />
+              <span
+                className="w-1.5 h-1.5 rounded-full bg-[var(--violet)] animate-node"
+                style={{ animationDelay: "0.2s" }}
+              />
+              <span
+                className="w-1.5 h-1.5 rounded-full bg-[var(--violet)] animate-node"
+                style={{ animationDelay: "0.4s" }}
+              />
+              <span className="ml-1">Searching your chats…</span>
             </div>
           )}
 
           {!loading && query && results.length === 0 && (
-            <div className="p-6 text-center text-sm text-gray-400 italic">
+            <div className="p-6 text-center text-sm text-[var(--ink-soft)] italic">
               No old conversations match "{query}"
+            </div>
+          )}
+
+          {!loading && !query && (
+            <div className="p-6 text-center text-xs font-mono-label text-[var(--ink-soft)] uppercase tracking-widest">
+              Start typing to search
             </div>
           )}
 
@@ -126,19 +139,21 @@ const { loadMessages, searchConversations } = useChat()
               <div
                 key={chat._id}
                 onClick={() => handleSelectChat(chat._id)}
-                className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all ${
+                className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all border-l-2 ${
                   idx === selectedIndex
-                    ? "bg-sky-100 text-sky-900 font-medium border-l-4 border-l-sky-500"
-                    : "hover:bg-gray-50 text-gray-700"
+                    ? "bg-[var(--violet)]/10 text-[var(--ink)] font-medium border-l-[var(--amber)]"
+                    : "hover:bg-[var(--paper)] text-[var(--ink-soft)] border-l-transparent"
                 }`}
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <span>💬</span>
+                  <span className="shrink-0 w-6 h-6 rounded-full bg-[var(--violet)]/10 text-[var(--violet)] flex items-center justify-center text-xs">
+                    💬
+                  </span>
                   <p className="text-sm truncate">
                     {chat.title || "Untitled Chat"}
                   </p>
                 </div>
-                <span className="text-xs text-gray-400">
+                <span className="font-mono-label text-[10px] text-[var(--ink-soft)] shrink-0 ml-3">
                   {new Date(chat.createdAt).toLocaleDateString("en-US", {
                     day: "numeric",
                     month: "short",
@@ -152,4 +167,4 @@ const { loadMessages, searchConversations } = useChat()
   );
 };
 
-export default GlobalSearchModal
+export default GlobalSearchModal;
