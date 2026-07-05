@@ -139,7 +139,7 @@ SEARCH QUERY QUALITY RULES:
 
 // 🎯 Agent
 const agent = createAgent({
-  model: geminiModel,
+  model: mistraAiModel,
   tools: [searchInternetTool, stockQuoteTool],
   systemPrompt: getSystemPrompt(),
 });
