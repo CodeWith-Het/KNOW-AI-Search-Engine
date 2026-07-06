@@ -91,7 +91,7 @@ const Register = () => {
 
         <div className="relative z-10">
           <span className="font-mono-label text-xs tracking-[0.2em] text-[var(--amber)] uppercase">
-            Perplexity AI
+            KNOW AI
           </span>
           <h1 className="font-display text-white text-4xl lg:text-[2.75rem] leading-[1.1] mt-6">
             Join the
@@ -137,7 +137,7 @@ const Register = () => {
           <div className="w-full max-w-md animate-fade-up">
             <div className="mb-9">
               <span className="font-mono-label text-xs tracking-[0.2em] text-[var(--ink-soft)] uppercase md:hidden">
-                Perplexity AI
+                kNOW AI
               </span>
               <h2 className="font-display text-[var(--ink)] text-3xl md:text-[2.25rem] mt-2">
                 Create account

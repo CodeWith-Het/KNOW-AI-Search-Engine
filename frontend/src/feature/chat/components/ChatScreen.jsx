@@ -122,7 +122,7 @@ const ChatScreen = () => {
         {/* Brand */}
         <div className="px-5 pt-6 pb-2 hidden md:block">
           <span className="font-mono-label text-[10px] tracking-[0.2em] text-[var(--amber)] uppercase">
-            Perplexity AI
+            KNOW AI
           </span>
         </div>
 
@@ -255,7 +255,7 @@ const ChatScreen = () => {
         {/* Header for mobile */}
         <header className="h-14 bg-[var(--ink)] flex items-center justify-between px-4 shadow-sm md:hidden shrink-0">
           <span className="font-display text-xl text-white tracking-tight">
-            Perplexity <span className="text-[var(--amber)]">AI</span>
+            KNOW <span className="text-[var(--amber)]">AI</span>
           </span>
           <button
             onClick={() => setIsSidebarOpen(true)}
