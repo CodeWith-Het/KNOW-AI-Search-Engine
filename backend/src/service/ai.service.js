@@ -31,15 +31,15 @@ const stockQuoteTool = tool(
   {
     name: "stockQuoteTool",
     description:
-      "Use this to get the EXACT live price of a stock, index, or cryptocurrency. You can pass a ticker symbol (e.g. 'AAPL', 'BTC/USD', 'TATAMOTORS') or just the plain company name (e.g. 'Tata Motors', 'Apple') — this tool will auto-resolve the correct current ticker even if the company recently renamed or demerged. ALWAYS use this instead of searchInternetTool whenever the user asks for a stock/crypto/index price.",
+      "Use this to get the EXACT live price of ANY stock (including US, Indian NSE/BSE, and Global markets), index, or cryptocurrency. You can pass a ticker symbol (e.g. 'AAPL', 'RELIANCE.NS', 'BTC/USD') OR just the plain company name (e.g. 'Tata Motors', 'Apple'). The tool will automatically resolve plain names to the correct ticker. ALWAYS use this instead of searchInternetTool whenever the user asks for ANY stock or crypto price.",
     schema: z.object({
       ticker: z
         .string()
         .describe(
-          "A ticker symbol OR a plain company name, e.g. 'AAPL', 'BTC/USD', or 'Tata Motors'",
+          "A ticker symbol OR a plain company name, e.g. 'AAPL', 'RELIANCE.NS', 'Tata Motors', or 'BTC/USD'"
         ),
     }),
-  },
+  }
 );
 // 🎯 Search Tool — general web search, NOT for exact prices anymore
 const searchInternetTool = tool(
@@ -112,9 +112,9 @@ CITATION RULES — follow these exactly:
 6. If you don't use searchInternetTool at all, don't add any citation markers.
 
 TOOL ROUTING RULES:
-- For ANY stock, index, or cryptocurrency price question, use stockQuoteTool with the correct ticker
-  symbol (e.g. "TATAMOTORS.NS", "BTC-USD", "AAPL"). Never use searchInternetTool for prices — search
-  snippets often don't contain the actual live number even when they look relevant.
+- For ANY stock (including Indian stocks like NSE/BSE), index, or cryptocurrency price question, ALWAYS use 
+  stockQuoteTool. You can send plain company names (e.g., "Tata Motors") or tickers (e.g., "RELIANCE.NS"). 
+  Never use searchInternetTool for live prices — search snippets often don't contain the actual live number.
 - If the user asks for a price in a currency different from the instrument's native currency (e.g. the
   user wants a USD-priced asset shown in INR), do this in two tool calls: first get the native price
   (e.g. "BTC/USD"), then get the live exchange rate using a forex pair (e.g. "USD/INR") via the SAME
