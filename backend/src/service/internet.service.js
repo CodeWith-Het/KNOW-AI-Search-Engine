@@ -14,12 +14,6 @@ export const searchInternet = async (query, options = {}) => {
       timeRange: options.timeRange || "week",
     });
 
-    // 🔍 TEMPORARY DEBUG — isse dekhenge Tavily actually kya wapas de raha hai
-    console.log("=== TAVILY RAW RESPONSE ===");
-    console.log("Query:", query, "| Options:", options);
-    console.log(JSON.stringify(result, null, 2));
-    console.log("=== END TAVILY RESPONSE ===");
-
     return JSON.stringify(result);
   } catch (error) {
     console.error("Error searching Tavily:", error);

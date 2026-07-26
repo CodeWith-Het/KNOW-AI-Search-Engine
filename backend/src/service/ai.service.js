@@ -76,10 +76,8 @@ const mistraAiModel = new ChatMistralAI({
   apiKey: process.env.MISTRAL_API_KEY,
 });
 
-// Citation instructions ab system prompt ka hissa hain
 // Function banaya taaki har request pe AAJ ki real date fresh inject ho —
-// warna model kabhi kabhi galat saal assume kar leta hai (jaise 2025 bol dena
-// jab asal mein 2026 chal raha ho), jisse date ranges wale answers galat ho jate hain
+// warna model kabhi kabhi galat saal assume kar leta hai
 const getSystemPrompt = () => {
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "long",
@@ -134,7 +132,24 @@ SEARCH QUERY QUALITY RULES:
   couldn't find directly relevant information, or try one more, more specific search query before
   giving up.
 - Never treat a search result as relevant just because it superficially mentions a matching name/keyword
-  — check that the actual content answers the question.`;
+  — check that the actual content answers the question.
+
+RESPONSE FORMATTING RULES — follow these strictly, every single time:
+1. Structure multi-part answers like a research brief: a short 1-2 sentence direct answer first, then
+   organized details below — never one giant run-on paragraph.
+2. When listing multiple items (news stories, facts, comparisons), ALWAYS use proper markdown list syntax:
+   each item starts with "1. ", "2. " etc. on its OWN new line, with a blank line before the list starts.
+   NEVER write list items back-to-back on the same line or run one item's text directly into the next
+   item's number (e.g. never "...reduces costs.2. Next story..." — always a line break first).
+3. Bold the key subject of each point (company names, product names, key numbers) using **bold**, so the
+   answer is scannable at a glance.
+4. If the topic naturally splits into sections (e.g. "AI news" vs "Elon Musk news" asked together, or a
+   multi-part question), use a short markdown heading (### Heading) for each section — don't blend
+   unrelated topics into one flowing paragraph.
+5. Keep paragraphs short — 2-3 sentences max per paragraph. Break longer explanations into multiple
+   short paragraphs or bullet points instead.
+6. Never merge two separate answers/topics together without a clear visual break (heading, blank line,
+   or horizontal rule) between them.`;
 };
 
 // 🎯 Agent
@@ -247,7 +262,6 @@ export const streamAgentResponse = async (messages, onToken, onStatus) => {
 
     for await (const event of eventStream) {
       // Tool call shuru hote hi status bhejo — achi UX ke liye
-      // ("Using searchInternetTool..." jaisa kuch frontend pe dikha sakte ho)
       if (event.event === "on_tool_start") {
         onStatus?.(event.name);
       }
@@ -261,7 +275,7 @@ export const streamAgentResponse = async (messages, onToken, onStatus) => {
         }
       }
 
-      // Search tool ke results se citations nikaalo (jaisa generateResponse mein karte hain)
+      // Search tool ke results se citations nikaalo
       if (event.event === "on_tool_end" && event.name === "searchInternetTool") {
         try {
           const parsed = JSON.parse(event.data.output?.content ?? event.data.output);

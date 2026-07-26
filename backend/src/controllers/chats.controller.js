@@ -58,7 +58,7 @@ export const sendMessage = async (req, res, next) => {
 }
 
 export const sendMessageStream = async (req, res, next) => {
-
+    // SSE headers response body likhna shuru karne se PEHLE set karne zaroori hain
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
@@ -69,7 +69,7 @@ export const sendMessageStream = async (req, res, next) => {
         res.write(`data: ${JSON.stringify(payload)}\n\n`);
     };
 
-    let createdChatId;
+    let createdChatId; 
 
     try {
         const { message, chat: chatId } = req.body;
@@ -125,7 +125,12 @@ export const sendMessageStream = async (req, res, next) => {
     } catch (error) {
         console.error("Stream error:", error.message);
 
-        // messageModel mein fallback save karne ki koshish karo taaki user ko pata chale ki kuch hua hai
+        // 🩹 Zaroori: agar yahan tak crash ho gaya to iska matlab user ka
+        // message DB mein save ho chuka hai but AI ka jawab nahi. Agar hum
+        // yahan kuch save nahi karte, to ye message "orphaned" (bina jawab)
+        // reh jayega, aur agli baar poori history LLM ko bheji jayegi jisme
+        // ye purana unanswered sawaal bhi hoga — jisse LLM confuse ho ke
+        // purane aur naye dono sawalon ko ek response mein mix kar deta hai.
         try {
             if (createdChatId) {
                 await messageModel.create({
