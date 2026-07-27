@@ -29,7 +29,7 @@ const engineeringLog = [
 
 const EngineeringLog = () => {
   return (
-    <section id="engineering" className="bg-gray-900 py-24 text-white">
+    <section id="engineering" className="bg-slate-950 py-24 text-white">
       <div className="max-w-4xl mx-auto px-6">
         <div className="mb-12">
           <span className="text-emerald-400 font-mono text-sm tracking-widest uppercase bg-emerald-400/10 px-3 py-1 rounded-full">
@@ -38,7 +38,7 @@ const EngineeringLog = () => {
           <h2 className="text-3xl md:text-5xl font-extrabold mt-6 tracking-tight">
             Built by debugging it in production.
           </h2>
-          <p className="mt-4 text-gray-400 text-lg max-w-2xl">
+          <p className="mt-4 text-slate-400 text-lg max-w-2xl">
             No demo is finished on the first try. Here's what actually broke,
             and how we engineered the solutions.
           </p>
@@ -48,17 +48,17 @@ const EngineeringLog = () => {
           {engineeringLog.map((entry, i) => (
             <div
               key={i}
-              className="bg-gray-800/50 border border-gray-700 p-6 rounded-2xl hover:bg-gray-800 transition-colors"
+              className="bg-slate-900/80 border border-white/10 p-6 rounded-2xl hover:border-emerald-400/20 transition-colors"
             >
               <div className="flex items-center gap-3 mb-3">
                 <span
-                  className={`text-xs font-bold uppercase tracking-wider px-2 py-1 rounded ${entry.tag === "fix" ? "bg-red-500/20 text-red-400" : entry.tag === "perf" ? "bg-blue-500/20 text-blue-400" : "bg-emerald-500/20 text-emerald-400"}`}
+                  className={`text-xs font-bold uppercase tracking-wider px-2 py-1 rounded ${entry.tag === "fix" ? "bg-red-500/20 text-red-300" : entry.tag === "perf" ? "bg-sky-500/20 text-sky-300" : "bg-emerald-500/20 text-emerald-300"}`}
                 >
                   {entry.tag}
                 </span>
-                <h3 className="text-xl font-bold">{entry.title}</h3>
+                <h3 className="text-xl font-bold text-white">{entry.title}</h3>
               </div>
-              <p className="text-gray-400 leading-relaxed">{entry.detail}</p>
+              <p className="text-slate-300 leading-relaxed">{entry.detail}</p>
             </div>
           ))}
         </div>

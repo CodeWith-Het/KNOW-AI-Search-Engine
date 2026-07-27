@@ -1,206 +1,103 @@
 import React, { useState } from "react";
-import { Link, Navigate } from "react-router-dom";
-import { useSelector } from "react-redux";
-import { useAuth } from "./../hook/useAuth";
-
-const citationNotes = [
-  { n: "01", text: "Every answer is traced back to its source." },
-  { n: "02", text: "No noise, no scroll. Just the synthesis." },
-  { n: "03", text: "Ask once, follow the thread anywhere." },
-];
+import { Link, useNavigate } from "react-router-dom";
+import AuthLayout from "./AuthLayout";
 
 const Login = () => {
   const [formData, setFormData] = useState({
-    emailOrUsername: "",
+    email: "",
     password: "",
+    rememberMe: false,
   });
-  const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
-
-  const { loginUser } = useAuth();
-  const user = useSelector((state) => state.auth.user);
-  const loading = useSelector((state) => state.auth.loading);
-
-  if (user && !loading) {
-    return <Navigate to="/" replace />;
-  }
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
+    const { name, value, type, checked } = e.target;
+    setFormData({ ...formData, [name]: type === "checkbox" ? checked : value });
   };
 
-  const validateForm = () => {
-    const newErrors = {};
-    if (!formData.emailOrUsername.trim())
-      newErrors.emailOrUsername = "Identifier is required";
-    if (!formData.password) newErrors.password = "Password is required";
-    return newErrors;
-  };
-
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    const newErrors = validateForm();
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
-
     setIsLoading(true);
-    try {
-      await loginUser({
-        loginId: formData.emailOrUsername,
-        password: formData.password,
-      });
-    } catch (error) {
-      setErrors({ submit: error.message });
-    } finally {
+    setTimeout(() => {
       setIsLoading(false);
-    }
+      navigate("/chat");
+    }, 1000);
   };
 
   return (
-    <div className="min-h-screen w-full flex bg-[var(--paper)] font-['Inter',sans-serif]">
-      {/* LEFT — signature panel, hidden on mobile */}
-      <div className="relative hidden md:flex md:w-[44%] lg:w-[40%] flex-col justify-between overflow-hidden bg-[var(--ink)] px-12 py-14">
-        <div className="absolute -top-24 -left-24 w-80 h-80 rounded-full bg-[var(--violet)]/30 blur-3xl animate-orb" />
-        <div className="absolute bottom-0 right-0 w-64 h-64 rounded-full bg-[var(--amber)]/10 blur-3xl" />
+    <AuthLayout
+      leftTitle="Welcome back to your workspace."
+      leftSubtitle={
+        "Sign in to pick up right where you left off.\nYour notes, tasks, and chats are waiting."
+      }
+      icon="✨"
+    >
+      <div className="mb-8">
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
+          Hey, hello 👋
+        </h2>
+        <p className="text-xs sm:text-sm text-gray-400 mt-1.5">
+          Enter the information you entered while registering.
+        </p>
+      </div>
 
-        <div className="relative z-10">
-          <span className="font-mono-label text-2xl tracking-[0.2em] text-[var(--amber)] uppercase">
-            KNOW AI
-          </span>
-          <h1 className="font-display text-white text-4xl lg:text-[2.75rem] leading-[1.1] mt-6">
-            Every question
-            <br />
-            deserves a{" "}
-            <span className="italic text-[var(--amber)]">traced</span>
-            <br />
-            answer.
-          </h1>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">
+            Email
+          </label>
+          <input
+            type="email"
+            name="email"
+            placeholder="name@example.com"
+            value={formData.email}
+            onChange={handleChange}
+            required
+            className="w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 outline-none transition-all focus:border-indigo-600 focus:bg-white focus:ring-4 focus:ring-indigo-600/10"
+          />
         </div>
 
-        <div className="relative z-10 space-y-6">
-          {citationNotes.map((note, i) => (
-            <div key={note.n} className="flex items-start gap-4">
-              <div className="relative mt-1 flex flex-col items-center">
-                <span
-                  className="w-2.5 h-2.5 rounded-full bg-[var(--amber)] animate-node"
-                  style={{ animationDelay: `${i * 0.4}s` }}
-                />
-                {i !== citationNotes.length - 1 && (
-                  <span className="w-px h-10 bg-white/35 mt-2" />
-                )}
-              </div>
-              <p className="text-white/70 text-sm leading-relaxed pt-0.5">
-                <span className="font-mono-label text-[var(--amber)] mr-2">
-                  {note.n}
-                </span>
-                {note.text}
-              </p>
-            </div>
-          ))}
+        <div>
+          <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">
+            Password
+          </label>
+          <input
+            type="password"
+            name="password"
+            placeholder="••••••••"
+            value={formData.password}
+            onChange={handleChange}
+            required
+            className="w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 outline-none transition-all focus:border-indigo-600 focus:bg-white focus:ring-4 focus:ring-indigo-600/10"
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="w-full mt-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 py-3.5 text-sm font-bold text-white shadow-lg shadow-indigo-500/25 transition-all hover:opacity-95 active:scale-[0.99] disabled:opacity-50"
+        >
+          {isLoading ? "Signing in..." : "Login"}
+        </button>
+      </form>
+
+      <div className="relative my-6 text-center">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-gray-100"></div>
         </div>
       </div>
 
-      {/* RIGHT — form */}
-      <div className="flex-1 flex items-center justify-center px-6 py-14">
-        <div className="w-full max-w-md animate-fade-up">
-          <div className="mb-9">
-            <span className="font-mono-label text-2xl tracking-[0.2em] text-[var(--ink-soft)] uppercase md:hidden">
-              KNOW AI
-            </span>
-            <h2 className="font-display text-[var(--ink)] text-3xl md:text-[2.25rem] mt-2">
-              Welcome back
-            </h2>
-            <p className="mt-3 text-sm text-[var(--ink-soft)]">
-              Sign in to continue your research.
-            </p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label
-                htmlFor="emailOrUsername"
-                className="mb-2 block text-xs font-semibold text-[var(--ink)] uppercase tracking-wide"
-              >
-                Email or Username
-              </label>
-              <input
-                type="text"
-                id="emailOrUsername"
-                name="emailOrUsername"
-                placeholder="you@example.com"
-                value={formData.emailOrUsername}
-                onChange={handleChange}
-                className={`w-full rounded-xl border bg-white px-4 py-3.5 text-sm text-[var(--ink)] outline-none transition-all focus:ring-4 focus:ring-[var(--violet)]/15 focus:border-[var(--violet)] ${
-                  errors.emailOrUsername
-                    ? "border-red-400 focus:ring-red-100 focus:border-red-500"
-                    : "border-[var(--line)]"
-                }`}
-              />
-              {errors.emailOrUsername && (
-                <p className="mt-1.5 text-xs font-medium text-red-500">
-                  {errors.emailOrUsername}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label
-                htmlFor="password"
-                className="mb-2 block text-xs font-semibold text-[var(--ink)] uppercase tracking-wide"
-              >
-                Password
-              </label>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                placeholder="••••••••"
-                value={formData.password}
-                onChange={handleChange}
-                className={`w-full rounded-xl border bg-white px-4 py-3.5 text-sm text-[var(--ink)] outline-none transition-all focus:ring-4 focus:ring-[var(--violet)]/15 focus:border-[var(--violet)] ${
-                  errors.password
-                    ? "border-red-400 focus:ring-red-100 focus:border-red-500"
-                    : "border-[var(--line)]"
-                }`}
-              />
-              {errors.password && (
-                <p className="mt-1.5 text-xs font-medium text-red-500">
-                  {errors.password}
-                </p>
-              )}
-            </div>
-
-            {errors.submit && (
-              <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600 font-medium">
-                {errors.submit}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="mt-2 w-full rounded-xl bg-[var(--ink)] px-5 py-3.5 text-sm font-bold text-white shadow-[0_10px_30px_-10px_rgba(91,79,233,0.5)] transition-all hover:bg-[var(--violet-deep)] disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed disabled:shadow-none"
-            >
-              {isLoading ? "Signing in…" : "Sign in"}
-            </button>
-          </form>
-
-          <div className="mt-8 text-center text-sm font-medium text-[var(--ink-soft)]">
-            Don't have an account?{" "}
-            <Link
-              to="/register"
-              className="text-[var(--violet)] hover:text-[var(--violet-deep)] font-semibold"
-            >
-              Sign up
-            </Link>
-          </div>
-        </div>
+      <div className="mt-6 text-center text-xs text-gray-500">
+        Don't have an account?{" "}
+        <Link
+          to="/register"
+          className="font-bold text-indigo-600 hover:underline"
+        >
+          Sign up
+        </Link>
       </div>
-    </div>
+    </AuthLayout>
   );
 };
 

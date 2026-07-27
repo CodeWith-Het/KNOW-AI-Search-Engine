@@ -1,20 +1,34 @@
+import React, { lazy, Suspense } from "react";
 import { createBrowserRouter, Navigate, Outlet } from "react-router-dom";
-import Login from "../feature/auth/pages/Login.jsx";
-import Register from "../feature/auth/pages/Register.jsx";
-import VerifyEmail from "../feature/auth/pages/VerifyEmail.jsx";
-import Dashboard from "./../feature/chat/pages/Dashboard.jsx";
+
 import Protected from "../feature/auth/components/Protected.jsx";
 import PublicRouter from "../feature/auth/components/PublicRouter.jsx";
 import Chatwrapper from "../feature/chat/layout/Chatwrapper.jsx";
 
-import LandingPage from "../Home/pages/LandingPage.jsx";
+const LandingPage = lazy(() => import("../Home/pages/LandingPage.jsx"));
+const Login = lazy(() => import("../feature/auth/pages/Login.jsx"));
+const Register = lazy(() => import("../feature/auth/pages/Register.jsx"));
+const VerifyEmail = lazy(() => import("../feature/auth/pages/VerifyEmail.jsx"));
+const Dashboard = lazy(() => import("../feature/chat/pages/Dashboard.jsx"));
+
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+  </div>
+);
+
+const SuspenseWrapper = ({ children }) => (
+  <Suspense fallback={<PageLoader />}>{children}</Suspense>
+);
 
 export const router = createBrowserRouter([
   {
     path: "/",
     element: (
       <PublicRouter>
-        <LandingPage />
+        <SuspenseWrapper>
+          <LandingPage />
+        </SuspenseWrapper>
       </PublicRouter>
     ),
   },
@@ -22,7 +36,9 @@ export const router = createBrowserRouter([
     path: "/login",
     element: (
       <PublicRouter>
-        <Login />
+        <SuspenseWrapper>
+          <Login />
+        </SuspenseWrapper>
       </PublicRouter>
     ),
   },
@@ -30,21 +46,29 @@ export const router = createBrowserRouter([
     path: "/register",
     element: (
       <PublicRouter>
-        <Register />
+        <SuspenseWrapper>
+          <Register />
+        </SuspenseWrapper>
       </PublicRouter>
     ),
   },
   {
     path: "/verify-email",
-    element: <VerifyEmail />,
+    element: (
+      <SuspenseWrapper>
+        <VerifyEmail />
+      </SuspenseWrapper>
+    ),
   },
-  // 3️⃣ Tera main AI Chat ka feature ab "/chat" route par chalega
+
   {
     path: "/chat",
     element: (
       <Protected>
         <Chatwrapper>
-          <Outlet />
+          <SuspenseWrapper>
+            <Outlet />
+          </SuspenseWrapper>
         </Chatwrapper>
       </Protected>
     ),
@@ -55,13 +79,18 @@ export const router = createBrowserRouter([
       },
       {
         path: ":id",
-        element: <Dashboard />,
+        element: <Dashboard />, 
       },
     ],
   },
-  
+
   {
     path: "/dashboard",
     element: <Navigate to="/chat" replace />,
+  },
+
+  {
+    path: "*",
+    element: <Navigate to="/" replace />,
   },
 ]);

@@ -13,8 +13,12 @@ const PublicRouter = ({ children }) => {
     );
   }
 
+  if (user?.isVerified) {
+    return <Navigate to="/chat" replace />;
+  }
+
   if (user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/verify-email" replace />;
   }
 
   return children;

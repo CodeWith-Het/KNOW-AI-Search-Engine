@@ -11,7 +11,6 @@ const GlobalSearchModal = ({ isOpen, onClose }) => {
 
   const { loadMessages, searchConversations } = useChat();
 
-  // User ke rukne par hi API call hogi
   useEffect(() => {
     if (!query.trim()) {
       setResults([]);
