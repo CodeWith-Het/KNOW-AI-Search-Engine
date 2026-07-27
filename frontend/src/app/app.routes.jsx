@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate } from "react-router-dom";
+import { createBrowserRouter, Navigate, Outlet } from "react-router-dom";
 import Login from "../feature/auth/pages/Login.jsx";
 import Register from "../feature/auth/pages/Register.jsx";
 import VerifyEmail from "../feature/auth/pages/VerifyEmail.jsx";
@@ -7,7 +7,17 @@ import Protected from "../feature/auth/components/Protected.jsx";
 import PublicRouter from "../feature/auth/components/PublicRouter.jsx";
 import Chatwrapper from "../feature/chat/layout/Chatwrapper.jsx";
 
+import LandingPage from "../Home/pages/LandingPage.jsx";
+
 export const router = createBrowserRouter([
+  {
+    path: "/",
+    element: (
+      <PublicRouter>
+        <LandingPage />
+      </PublicRouter>
+    ),
+  },
   {
     path: "/login",
     element: (
@@ -28,28 +38,30 @@ export const router = createBrowserRouter([
     path: "/verify-email",
     element: <VerifyEmail />,
   },
+  // 3️⃣ Tera main AI Chat ka feature ab "/chat" route par chalega
   {
-    path: "/",
+    path: "/chat",
     element: (
       <Protected>
         <Chatwrapper>
-          <Dashboard />
+          <Outlet />
         </Chatwrapper>
       </Protected>
     ),
     children: [
       {
         index: true,
-        element: <Dashboard />,
+        element: <Dashboard />, 
       },
       {
-        path: "/chat/:id",
+        path: ":id",
         element: <Dashboard />,
       },
     ],
   },
+  
   {
     path: "/dashboard",
-    element: <Navigate to="/" replace />,
+    element: <Navigate to="/chat" replace />,
   },
 ]);
