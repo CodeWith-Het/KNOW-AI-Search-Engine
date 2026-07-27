@@ -6,10 +6,15 @@ import AppError from './../utils/AppError.js';
 
 export const registerUser = async (req, res, next) => {
   try {
-    const { username, email, password } = req.body;
+    const { username, email, password, name } = req.body;
+    const requestedUsername = (username || name || "").trim();
+
+    if (!requestedUsername || !email || !password) {
+      return next(new AppError("Username, email, and password are required.", 400, "MISSING_FIELDS"));
+    }
 
     const isAlreadyExist = await userModel.findOne({
-      $or: [{ username }, { email }],
+      $or: [{ username: requestedUsername }, { email }],
     });
 
     if (isAlreadyExist) {
@@ -17,7 +22,7 @@ export const registerUser = async (req, res, next) => {
     }
 
     const user = await userModel.create({
-      username,
+      username: requestedUsername,
       email,
       password,
     });
@@ -49,15 +54,22 @@ export const registerUser = async (req, res, next) => {
       await sendmail({
         to: user.email,
         subject: "🔐 Verify Your Email Address",
-        text: `Hi ${username}, verify your email by clicking here: ${verificationUrl}`,
+        text: `Hi ${requestedUsername}, verify your email by clicking here: ${verificationUrl}`,
         html: emailHtmlTemplate,
       });
     } catch (emailError) {
       console.error("Failed to send verification email:", emailError);
-      await user.deleteOne();
 
-      // for error status
-      return next(new AppError("Unable to send verification email. Please try again later.",500,"EMAIL_SEND_FAILED"))
+      return res.status(201).json({
+        success: true,
+        message: "User was created, but the verification email could not be sent. Please try resending later.",
+        user: {
+          id: user._id,
+          username: user.username,
+          email: user.email,
+        },
+        emailSent: false,
+      });
     }
 
     res.status(201).json({
@@ -68,6 +80,7 @@ export const registerUser = async (req, res, next) => {
         username: user.username,
         email: user.email,
       },
+      emailSent: true,
     });
   } catch (error) {
     next(error);
