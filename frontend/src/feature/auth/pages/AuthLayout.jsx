@@ -1,31 +1,42 @@
 import React from "react";
+import ThemeToggle from "../../../app/components/ThemeToggle";
 
-const AuthLayout = ({ children, leftTitle, leftSubtitle, icon = "▶" }) => {
+const AuthLayout = ({ children, leftTitle, leftSubtitle, icon }) => {
   return (
-    <div className="h-screen w-screen m-0 p-0 overflow-hidden font-sans flex flex-col md:flex-row bg-white">
-      {/* LEFT SIDE — Dynamic Gradient Banner */}
-      <div className="hidden md:flex md:w-[50%] h-full bg-gradient-to-tr from-[#cbe4ff] via-[#d7cbfb] to-[#fbcfe8] p-8 lg:p-16 flex-col justify-center relative overflow-hidden">
-        {/* Decorative Background Shapes */}
-        <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-white/30 blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 right-0 w-96 h-96 rounded-full bg-indigo-400/10 blur-3xl pointer-events-none" />
+    // dark: classes add ki hain taaki layout dark/light mode handle kare
+    <div className="min-h-screen flex w-full bg-gray-50 dark:bg-[#0a0a0a] text-gray-900 dark:text-white overflow-hidden transition-colors duration-300">
+      {/* LEFT SIDE (Brand Banner - remains dark always for premium feel) */}
+      <div className="hidden lg:flex flex-col justify-between w-1/2 p-16 relative bg-[#121212] border-r border-gray-200 dark:border-white/5">
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/20 via-transparent to-transparent pointer-events-none"></div>
+        <div className="absolute -left-20 top-1/3 w-[500px] h-[500px] bg-emerald-600/10 blur-[120px] rounded-full pointer-events-none"></div>
 
-        {/* Frosted Glass Content Box */}
-        <div className="relative z-10 bg-white/25 backdrop-blur-xl border border-white/40 p-8 lg:p-12 rounded-3xl shadow-lg">
-          <span className="text-2xl font-bold text-gray-900 inline-block mb-3">
+        <div className="relative z-10 font-bold text-2xl tracking-widest flex items-center gap-2 text-white">
+          <div className="w-8 h-8 bg-white text-black flex justify-center items-center rounded-sm">
+            K
+          </div>
+          KNOW <span className="text-emerald-500">AI</span>
+        </div>
+
+        <div className="relative z-10 mb-20 text-white">
+          <div className="w-16 h-16 bg-white/5 border border-white/10 backdrop-blur-md flex items-center justify-center rounded-2xl mb-8 shadow-xl">
             {icon}
-          </span>
-          <h1 className="text-3xl lg:text-4xl font-extrabold text-gray-900 leading-[1.2] tracking-tight">
+          </div>
+          <h1 className="text-5xl font-extrabold tracking-tight mb-6 leading-[1.1]">
             {leftTitle}
           </h1>
-          <p className="mt-4 text-sm lg:text-base text-gray-700 leading-relaxed font-medium whitespace-pre-line">
+          <p className="text-lg text-gray-400 max-w-md leading-relaxed">
             {leftSubtitle}
           </p>
         </div>
       </div>
 
-      {/* RIGHT SIDE — Form Area */}
-      <div className="w-full md:w-[50%] h-full p-6 sm:p-10 lg:p-16 flex flex-col justify-center overflow-y-auto bg-white">
-        <div className="w-full max-w-md mx-auto">{children}</div>
+      {/* RIGHT SIDE (Form Container) */}
+      <div className="flex-1 flex flex-col justify-center items-center px-6 py-12 lg:px-24 relative">
+        {/* 🌟 YAHAN LAGAYA THEME TOGGLE 🌟 */}
+        {/* Absolute position taaki screen ke top-right corner pe rahe */}
+        <ThemeToggle className="absolute top-6 right-6 lg:top-10 lg:right-10 z-50" />
+
+        <div className="w-full max-w-md z-10">{children}</div>
       </div>
     </div>
   );

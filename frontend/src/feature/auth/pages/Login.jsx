@@ -3,100 +3,107 @@ import { Link, useNavigate } from "react-router-dom";
 import AuthLayout from "./AuthLayout";
 
 const Login = () => {
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-    rememberMe: false,
-  });
-  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const [formData, setFormData] = useState({ email: "", password: "" });
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData({ ...formData, [name]: type === "checkbox" ? checked : value });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      navigate("/chat");
-    }, 1000);
+    console.log("Login Data:", formData);
+    // navigate("/chat");
   };
+
+  const loginIcon = (
+    <svg
+      className="w-8 h-8 text-emerald-400"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
+      ></path>
+    </svg>
+  );
 
   return (
     <AuthLayout
-      leftTitle="Welcome back to your workspace."
-      leftSubtitle={
-        "Sign in to pick up right where you left off.\nYour notes, tasks, and chats are waiting."
+      leftTitle={
+        <>
+          Welcome back to <br />{" "}
+          <span className="text-emerald-500">Your Workspace.</span>
+        </>
       }
-      icon="✨"
+      leftSubtitle="Sign in to continue your research, track live stock data, and command your AI agent."
+      icon={loginIcon}
     >
-      <div className="mb-8">
-        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
-          Hey, hello 👋
-        </h2>
-        <p className="text-xs sm:text-sm text-gray-400 mt-1.5">
-          Enter the information you entered while registering.
+      <div className="mb-10">
+        {/* Mobile only logo */}
+        <div className="lg:hidden w-10 h-10 bg-white text-black font-bold text-xl flex justify-center items-center rounded-sm mb-6">
+          K
+        </div>
+        <h2 className="text-3xl font-bold tracking-tight">Sign In</h2>
+        <p className="text-sm text-gray-400 mt-2">
+          Enter your details to access your account
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">
-            Email
+          <label className="block text-sm font-medium text-gray-400 mb-1.5">
+            Email Address
           </label>
           <input
             type="email"
             name="email"
-            placeholder="name@example.com"
             value={formData.email}
             onChange={handleChange}
+            placeholder="you@example.com"
+            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500 focus:bg-white/10 transition-all"
             required
-            className="w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 outline-none transition-all focus:border-indigo-600 focus:bg-white focus:ring-4 focus:ring-indigo-600/10"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">
-            Password
-          </label>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="block text-sm font-medium text-gray-400">
+              Password
+            </label>
+          </div>
           <input
             type="password"
             name="password"
-            placeholder="••••••••"
             value={formData.password}
             onChange={handleChange}
+            placeholder="••••••••"
+            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500 focus:bg-white/10 transition-all"
             required
-            className="w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 outline-none transition-all focus:border-indigo-600 focus:bg-white focus:ring-4 focus:ring-indigo-600/10"
           />
         </div>
 
         <button
           type="submit"
-          disabled={isLoading}
-          className="w-full mt-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 py-3.5 text-sm font-bold text-white shadow-lg shadow-indigo-500/25 transition-all hover:opacity-95 active:scale-[0.99] disabled:opacity-50"
+          className="w-full bg-white text-black hover:bg-gray-200 font-semibold rounded-xl px-4 py-3.5 mt-6 transition-all duration-200 shadow-lg shadow-white/10"
         >
-          {isLoading ? "Signing in..." : "Login"}
+          Sign In
         </button>
       </form>
 
-      <div className="relative my-6 text-center">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-gray-100"></div>
-        </div>
-      </div>
-
-      <div className="mt-6 text-center text-xs text-gray-500">
+      <p className="text-center text-sm text-gray-500 mt-8">
         Don't have an account?{" "}
         <Link
           to="/register"
-          className="font-bold text-indigo-600 hover:underline"
+          className="text-white hover:text-emerald-400 font-medium transition-colors"
         >
-          Sign up
+          Sign up for free
         </Link>
-      </div>
+      </p>
     </AuthLayout>
   );
 };
