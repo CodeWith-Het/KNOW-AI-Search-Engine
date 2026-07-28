@@ -6,6 +6,7 @@ import { useAuth } from "../../auth/hook/useAuth";
 import remarkGfm from "remark-gfm";
 import ReactMarkdown from "react-markdown";
 import GlobalSearchModal from "./GlobalSearchModal";
+import ThemeToggle from "./../../../app/components/ThemeToggle";
 
 // Helper function: Array of objects ko string mein badalne ke liye
 const formatMessage = (content) => {
@@ -33,7 +34,7 @@ const renderWithCitations = (text, citations = []) => {
         target="_blank"
         rel="noopener noreferrer"
         title={citation.title}
-        className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[var(--violet)]/15 text-[var(--violet)] text-[10px] font-bold mx-0.5 align-middle hover:bg-[var(--violet)]/25 no-underline"
+        className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold mx-0.5 align-middle hover:bg-emerald-200 dark:hover:bg-emerald-500/30 transition-colors no-underline"
       >
         {match[1]}
       </a>
@@ -82,26 +83,27 @@ const ChatScreen = () => {
   }, [id]);
 
   return (
-    <div className="flex h-screen bg-[var(--paper)] text-[var(--ink)] font-['Inter',sans-serif] overflow-hidden relative">
+    // Background changes based on theme
+    <div className="flex h-screen bg-gray-50 dark:bg-[#0a0a0a] text-gray-900 dark:text-gray-100 font-sans overflow-hidden relative transition-colors duration-300">
       {/* MOBILE DRAWER OVERLAY */}
       {isSidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden"
+          className="fixed inset-0 bg-gray-900/50 dark:bg-black/60 backdrop-blur-sm z-40 md:hidden transition-all"
           onClick={() => setIsSidebarOpen(false)}
         ></div>
       )}
 
-      {/* ⬅️ SIDEBAR — ink dark, premium */}
+      {/* ⬅️ SIDEBAR */}
       <aside
-        className={`fixed md:relative z-50 h-full w-72 bg-[var(--ink)] flex flex-col shadow-2xl transition-transform duration-300 ease-in-out
+        className={`fixed md:relative z-50 h-full w-72 bg-white dark:bg-[#121212] border-r border-gray-200 dark:border-neutral-800 flex flex-col shadow-2xl md:shadow-none transition-transform duration-300 ease-in-out
         ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
         md:translate-x-0 md:flex`}
       >
         {/* Mobile Close Button */}
-        <div className="flex justify-end p-2 md:hidden border-b border-white/10">
+        <div className="flex justify-end p-3 md:hidden border-b border-gray-200 dark:border-neutral-800">
           <button
             onClick={() => setIsSidebarOpen(false)}
-            className="text-white/50 hover:text-white p-2"
+            className="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white p-2 transition-colors"
           >
             <svg
               className="w-6 h-6"
@@ -118,23 +120,24 @@ const ChatScreen = () => {
             </svg>
           </button>
         </div>
-
         {/* Brand */}
-        <div className="px-5 pt-6 pb-2 hidden md:block">
-          <span className="font-mono-label text-[10px] tracking-[0.2em] text-[var(--amber)] uppercase">
-            KNOW AI
-          </span>
+        <div
+          className="flex items-center gap-2 mb-4 mt-5 ml-5 text-xl font-bold tracking-tight text-gray-900 dark:text-white transition-colors"
+        >
+          <div className="w-8 h-8 bg-white text-black flex justify-center items-center rounded-sm">
+            K
+          </div>
+          KNOW <span className="text-emerald-500">AI</span>
         </div>
-
         {/* 🎯 ACTION BUTTONS */}
-        <div className="p-4 pt-3 space-y-2.5">
+        <div className="p-4 pt-3 space-y-3">
           <button
             onClick={() => {
               newChats();
               navigate("/");
               setIsSidebarOpen(false);
             }}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[var(--violet)] hover:bg-[var(--violet-deep)] text-white rounded-xl shadow-lg shadow-[var(--violet)]/20 transition-all font-semibold text-sm cursor-pointer"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-lg shadow-emerald-600/20 transition-all font-semibold text-sm cursor-pointer"
           >
             <svg
               className="w-4 h-4"
@@ -154,7 +157,7 @@ const ChatScreen = () => {
 
           <button
             onClick={() => setIsGlobalSearchOpen(true)}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 rounded-xl transition-all font-medium text-sm cursor-pointer"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-white/10 rounded-xl transition-all font-medium text-sm cursor-pointer"
           >
             <svg
               className="w-4 h-4"
@@ -172,10 +175,9 @@ const ChatScreen = () => {
             Search Chats
           </button>
         </div>
-
         {/* Chat History List */}
         <div className="flex-1 overflow-y-auto px-3 pb-3 space-y-1 mt-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-          <p className="font-mono-label text-[10px] text-white/30 uppercase tracking-widest mb-2 px-2">
+          <p className="font-mono text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 px-2 font-semibold">
             Recent
           </p>
 
@@ -190,11 +192,11 @@ const ChatScreen = () => {
                 }}
                 className={`group flex items-center justify-between px-3 py-2.5 text-sm rounded-lg cursor-pointer transition-colors ${
                   isActiveChatId === c._id
-                    ? "bg-[var(--violet)]/20 text-white border-l-2 border-[var(--amber)]"
-                    : "text-white/60 hover:bg-white/5 hover:text-white/90 border-l-2 border-transparent"
+                    ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-l-2 border-emerald-500 font-medium"
+                    : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-gray-200 border-l-2 border-transparent"
                 }`}
               >
-                <span className="truncate w-4/5 font-medium">
+                <span className="truncate w-4/5">
                   {c.title || "New Conversation"}
                 </span>
                 <svg
@@ -202,7 +204,7 @@ const ChatScreen = () => {
                     e.stopPropagation();
                     deleteChat(c._id, isActiveChatId);
                   }}
-                  className="w-4 h-4 text-white/30 opacity-0 group-hover:opacity-100 hover:text-red-400 transition-opacity"
+                  className="w-4 h-4 text-gray-400 dark:text-gray-500 opacity-0 group-hover:opacity-100 hover:text-red-500 dark:hover:text-red-400 transition-opacity"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -217,23 +219,32 @@ const ChatScreen = () => {
               </div>
             ))
           ) : (
-            <p className="text-xs text-white/30 px-2">No recent chats</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 px-2">
+              No recent chats
+            </p>
           )}
         </div>
+        {/* Bottom: User Profile & Theme Toggle */}
+        <div className="p-4 border-t border-gray-200 dark:border-neutral-800 space-y-4 bg-gray-50/50 dark:bg-transparent">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-9 h-9 shrink-0 rounded-full bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400 flex items-center justify-center font-bold text-sm border border-emerald-200 dark:border-emerald-800/50">
+                {userInitial}
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                  {user.username}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                  {user.email}
+                </p>
+              </div>
+            </div>
 
-        {/* Bottom: User Profile */}
-        <div className="p-4 border-t border-white/10 space-y-3">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-[var(--violet)]/20 text-[var(--amber)] flex items-center justify-center font-bold text-sm border border-white/10">
-              {userInitial}
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-white truncate">
-                {user.username}
-              </p>
-              <p className="text-xs text-white/40 truncate">{user.email}</p>
-            </div>
+            {/* 🌟 Theme Toggle Injected Here */}
+            <ThemeToggle className="shrink-0" />
           </div>
+
           <button
             onClick={async () => {
               try {
@@ -243,7 +254,7 @@ const ChatScreen = () => {
                 console.error(logoutError);
               }
             }}
-            className="w-full rounded-lg bg-white/5 hover:bg-red-500/20 border border-white/10 hover:border-red-500/40 px-4 py-2 text-sm font-semibold text-white/70 hover:text-red-300 transition"
+            className="w-full rounded-lg bg-white dark:bg-white/5 hover:bg-red-50 dark:hover:bg-red-500/10 border border-gray-200 dark:border-white/10 hover:border-red-200 dark:hover:border-red-500/30 px-4 py-2 text-sm font-semibold text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors shadow-sm"
           >
             Logout
           </button>
@@ -253,13 +264,17 @@ const ChatScreen = () => {
       {/* 🎯 MAIN CONTENT AREA */}
       <main className="flex-1 flex flex-col relative w-full h-full">
         {/* Header for mobile */}
-        <header className="h-14 bg-[var(--ink)] flex items-center justify-between px-4 shadow-sm md:hidden shrink-0">
-          <span className="font-display text-xl text-white tracking-tight">
-            KNOW <span className="text-[var(--amber)]">AI</span>
+        <header className="h-14 bg-white dark:bg-[#121212] border-b border-gray-200 dark:border-neutral-800 flex items-center justify-between px-4 shadow-sm md:hidden shrink-0 transition-colors">
+          <span className="font-bold text-xl text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
+            <div className="w-6 h-6 bg-gray-900 dark:bg-white text-white dark:text-black flex justify-center items-center rounded-sm text-xs">
+              K
+            </div>
+            KNOW{" "}
+            <span className="text-emerald-600 dark:text-emerald-500">AI</span>
           </span>
           <button
             onClick={() => setIsSidebarOpen(true)}
-            className="text-white/70 hover:text-white focus:outline-none"
+            className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white focus:outline-none transition-colors"
           >
             <svg
               className="w-7 h-7"
@@ -281,16 +296,18 @@ const ChatScreen = () => {
         <div className="flex-1 overflow-y-scroll scroll-smooth p-4 md:p-8 max-w-4xl mx-auto w-full h-[calc(100vh-120px)] overflow-x-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {!messages || messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center space-y-4 pt-10 animate-fade-up">
-              <span className="font-mono-label text-xs tracking-[0.2em] text-[var(--violet)] uppercase">
+              <span className="font-mono text-xs tracking-[0.2em] text-emerald-600 dark:text-emerald-500 uppercase font-semibold">
                 Ask anything
               </span>
-              <h1 className="font-display text-3xl md:text-5xl text-[var(--ink)] tracking-tight">
+              <h1 className="text-3xl md:text-5xl text-gray-900 dark:text-white font-extrabold tracking-tight">
                 What do you want to{" "}
-                <span className="italic text-[var(--violet)]">know?</span>
+                <span className="italic text-emerald-600 dark:text-emerald-500">
+                  know?
+                </span>
               </h1>
-              <p className="text-[var(--ink-soft)] text-base md:text-lg max-w-md">
+              <p className="text-gray-500 dark:text-gray-400 text-base md:text-lg max-w-md">
                 Ask anything to search, synthesize, and get direct, sourced
-                answers.
+                answers from live data.
               </p>
             </div>
           ) : (
@@ -301,17 +318,17 @@ const ChatScreen = () => {
                   className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} animate-fade-up`}
                 >
                   {msg.role === "user" ? (
-                    <div className="p-4 max-w-[85%] md:max-w-[80%] rounded-2xl rounded-br-md bg-[var(--violet)] text-white shadow-lg shadow-[var(--violet)]/15">
+                    <div className="p-4 max-w-[85%] md:max-w-[80%] rounded-2xl rounded-br-sm bg-gray-900 dark:bg-emerald-600 text-white shadow-lg shadow-gray-900/10 dark:shadow-emerald-900/20">
                       {formatMessage(msg.content)}
                     </div>
                   ) : (
-                    <div className="p-4 max-w-[85%] md:max-w-[80%] rounded-2xl rounded-bl-md bg-white border border-[var(--line)] border-l-4 border-l-[var(--amber)] shadow-sm overflow-hidden">
-                      <div className="prose prose-sm max-w-none text-[var(--ink)] overflow-x-auto">
+                    <div className="p-5 max-w-[85%] md:max-w-[80%] rounded-2xl rounded-bl-sm bg-white dark:bg-[#121212] border border-gray-200 dark:border-neutral-800 border-l-4 border-l-emerald-500 shadow-md overflow-hidden transition-colors">
+                      <div className="prose prose-sm dark:prose-invert max-w-none text-gray-800 dark:text-gray-200 overflow-x-auto">
                         <ReactMarkdown
                           remarkPlugins={[remarkGfm]}
                           components={{
                             p: ({ children }) => (
-                              <p>
+                              <p className="leading-relaxed">
                                 {React.Children.map(children, (child) =>
                                   typeof child === "string"
                                     ? renderWithCitations(child, msg.citations)
@@ -326,23 +343,23 @@ const ChatScreen = () => {
                       </div>
 
                       {msg.streaming && (
-                        <div className="mt-2 flex items-center gap-2 text-[var(--ink-soft)]">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[var(--violet)] animate-node" />
+                        <div className="mt-3 flex items-center gap-1.5 text-gray-400">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                           <span
-                            className="w-1.5 h-1.5 rounded-full bg-[var(--violet)] animate-node"
+                            className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"
                             style={{ animationDelay: "0.2s" }}
                           />
                           <span
-                            className="w-1.5 h-1.5 rounded-full bg-[var(--violet)] animate-node"
+                            className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"
                             style={{ animationDelay: "0.4s" }}
                           />
                         </div>
                       )}
 
-                      {/* 📚 Sources list — sirf tab dikhta hai jab citations available hon */}
+                      {/* 📚 Sources list */}
                       {msg.citations && msg.citations.length > 0 && (
-                        <div className="mt-3 pt-3 border-t border-[var(--line)] space-y-1.5">
-                          <p className="font-mono-label text-[10px] text-[var(--ink-soft)] uppercase tracking-widest mb-2">
+                        <div className="mt-4 pt-4 border-t border-gray-100 dark:border-neutral-800 space-y-2">
+                          <p className="font-mono text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest font-semibold">
                             Sources
                           </p>
                           {msg.citations.map((c) => (
@@ -351,12 +368,14 @@ const ChatScreen = () => {
                               href={c.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex items-start gap-2 text-xs text-[var(--ink-soft)] hover:text-[var(--violet)] transition-colors"
+                              className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors bg-gray-50 dark:bg-neutral-900 p-2 rounded-lg border border-gray-100 dark:border-neutral-800"
                             >
-                              <span className="shrink-0 w-4 h-4 rounded-full bg-[var(--violet)]/10 text-[var(--violet)] text-[9px] font-bold flex items-center justify-center mt-0.5">
+                              <span className="shrink-0 w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-[9px] font-bold flex items-center justify-center">
                                 {c.id}
                               </span>
-                              <span className="truncate">{c.title}</span>
+                              <span className="truncate leading-tight mt-0.5">
+                                {c.title}
+                              </span>
                             </a>
                           ))}
                         </div>
@@ -365,19 +384,25 @@ const ChatScreen = () => {
                   )}
                 </div>
               ))}
+
+              {/* Loading State */}
               {isLoading && (
                 <div className="flex justify-start">
-                  <div className="flex items-center gap-2 p-4 bg-white border border-[var(--line)] border-l-4 border-l-[var(--amber)] rounded-2xl rounded-bl-md shadow-sm text-[var(--ink-soft)]">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[var(--violet)] animate-node" />
-                    <span
-                      className="w-1.5 h-1.5 rounded-full bg-[var(--violet)] animate-node"
-                      style={{ animationDelay: "0.2s" }}
-                    />
-                    <span
-                      className="w-1.5 h-1.5 rounded-full bg-[var(--violet)] animate-node"
-                      style={{ animationDelay: "0.4s" }}
-                    />
-                    <span className="text-sm ml-1">Synthesizing…</span>
+                  <div className="flex items-center gap-3 p-4 bg-white dark:bg-[#121212] border border-gray-200 dark:border-neutral-800 border-l-4 border-l-emerald-500 rounded-2xl rounded-bl-sm shadow-md text-gray-600 dark:text-gray-400 transition-colors">
+                    <div className="w-5 h-5 border-2 border-emerald-200 dark:border-emerald-900 border-t-emerald-500 dark:border-t-emerald-400 rounded-full animate-spin">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <span
+                        className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"
+                        style={{ animationDelay: "0.2s" }}
+                      />
+                      <span
+                        className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"
+                        style={{ animationDelay: "0.4s" }}
+                      />
+                    </div>
+                    <span className="text-sm font-medium">
+                      Synthesizing real-time data…
+                    </span>
                   </div>
                 </div>
               )}
@@ -386,12 +411,12 @@ const ChatScreen = () => {
         </div>
 
         {/* ⌨️ INPUT AREA */}
-        <div className="p-4 md:p-6 w-full max-w-4xl mx-auto sticky bottom-0 bg-[var(--paper)]/95 backdrop-blur-md z-30 shrink-0">
-          <div className="relative border border-[var(--line)] rounded-2xl shadow-lg bg-white focus-within:border-[var(--violet)] focus-within:ring-4 focus-within:ring-[var(--violet)]/10 transition-all">
+        <div className="p-4 md:p-6 w-full max-w-4xl mx-auto sticky bottom-0 bg-gray-50/95 dark:bg-[#0a0a0a]/95 backdrop-blur-md z-30 shrink-0 transition-colors">
+          <div className="relative border border-gray-300 dark:border-neutral-700 rounded-2xl shadow-lg bg-white dark:bg-[#121212] focus-within:border-emerald-500 dark:focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-500/10 transition-all">
             <textarea
               id="chat-input"
               name="chatInput"
-              className="w-full bg-transparent p-4 pr-16 text-[var(--ink)] outline-none resize-none font-medium [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+              className="w-full bg-transparent p-4 pr-16 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none resize-none font-medium [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
               rows="2"
               placeholder="Ask anything…"
               value={chatInput}
@@ -402,7 +427,7 @@ const ChatScreen = () => {
             <button
               onClick={handleSend}
               disabled={isLoading || !chatInput.trim()}
-              className="absolute right-3 bottom-3 p-2.5 bg-[var(--violet)] hover:bg-[var(--violet-deep)] disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-xl transition-colors shadow-md cursor-pointer"
+              className="absolute right-3 bottom-3 p-2.5 bg-gray-900 dark:bg-emerald-600 hover:bg-black dark:hover:bg-emerald-500 disabled:bg-gray-300 dark:disabled:bg-gray-800 disabled:text-gray-500 text-white rounded-xl transition-colors shadow-md cursor-pointer"
             >
               <svg
                 className="w-5 h-5"
@@ -419,7 +444,7 @@ const ChatScreen = () => {
               </svg>
             </button>
           </div>
-          <div className="relative flex justify-between items-center mt-3 text-xs text-[var(--ink-soft)] font-mono-label px-2 hidden md:flex">
+          <div className="relative flex justify-between items-center mt-3 text-xs text-gray-500 dark:text-gray-400 font-mono px-2 hidden md:flex">
             <span className="absolute right-0">Shift + Enter for new line</span>
           </div>
         </div>

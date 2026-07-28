@@ -66,7 +66,9 @@ const Login = () => {
           <div className="lg:hidden w-10 h-10 bg-white text-black font-bold text-xl flex justify-center items-center rounded-sm mb-6">
             K
           </div>
-          <h2 className="text-3xl font-bold tracking-tight">Sign In</h2>
+          <h2 className="text-3xl font-bold tracking-tight dark:text-white">
+            Sign In
+          </h2>
           <p className="text-sm text-gray-400 mt-2">
             Enter your details to access your account
           </p>
@@ -108,7 +110,7 @@ const Login = () => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-white text-black hover:bg-gray-200 disabled:opacity-70 font-semibold rounded-xl px-4 py-3.5 mt-6 transition-all duration-200 shadow-lg shadow-white/10"
+            className="w-full dark:bg-blue-500 dark:text-white bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-70 font-semibold rounded-xl px-4 py-3.5 mt-6 transition-all duration-200 shadow-lg shadow-white/10"
           >
             {isSubmitting ? "Signing in..." : "Sign In"}
           </button>
@@ -118,7 +120,7 @@ const Login = () => {
           Don't have an account?{" "}
           <Link
             to="/register"
-            className="text-white hover:text-emerald-400 font-medium transition-colors"
+            className="text-gray-900 dark:text-white hover:text-emerald-400 font-medium transition-colors"
           >
             Sign up for free
           </Link>

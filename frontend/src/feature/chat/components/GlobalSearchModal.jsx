@@ -17,7 +17,6 @@ const GlobalSearchModal = ({ isOpen, onClose }) => {
       return;
     }
 
-    // user ruk janwe ke bad 400ms ke baad API call hogi
     setLoading(true);
     const delayDebounce = setTimeout(async () => {
       try {
@@ -33,7 +32,6 @@ const GlobalSearchModal = ({ isOpen, onClose }) => {
     return () => clearTimeout(delayDebounce);
   }, [query]);
 
-  // KEYBOARD NAVIGATION: Up, Down, Enter
   const handleKeyDown = (e) => {
     if (e.key === "Escape") onClose();
     if (results.length === 0) return;
@@ -50,8 +48,6 @@ const GlobalSearchModal = ({ isOpen, onClose }) => {
     }
   };
 
-  // jab koi user chat ko select kare to uska message load ho jaye
-  // and search Model close ho jaye
   const handleSelectChat = (chatId) => {
     loadMessages(chatId);
     navigate(`/chat/${chatId}`);
@@ -63,16 +59,15 @@ const GlobalSearchModal = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-start justify-center pt-24 px-4">
-      {/* Backdrop click se close */}
+    <div className="fixed inset-0 bg-neutral-900/40 dark:bg-black/60 backdrop-blur-sm z-50 flex items-start justify-center pt-24 px-4 transition-all duration-300">
       <div className="absolute inset-0" onClick={onClose}></div>
 
-      {/* Main Search Container */}
-      <div className="bg-white rounded-2xl shadow-[0_30px_70px_-20px_rgba(18,19,26,0.35)] border border-[var(--line)] w-full max-w-2xl overflow-hidden relative z-10 flex flex-col max-h-[60vh] animate-fade-up">
+      {/* Glassmorphism Search Container */}
+      <div className="bg-white/95 dark:bg-neutral-900/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200 dark:border-neutral-800 w-full max-w-2xl overflow-hidden relative z-10 flex flex-col max-h-[60vh] animate-fade-up">
         {/* Input Bar */}
-        <div className="flex items-center px-4 py-3.5 border-b border-[var(--line)]">
+        <div className="flex items-center px-4 py-4 border-b border-gray-200 dark:border-neutral-800">
           <svg
-            className="w-5 h-5 text-[var(--violet)] mr-3 shrink-0"
+            className="w-5 h-5 text-emerald-500 mr-3 shrink-0"
             fill="none"
             stroke="currentColor"
             strokeWidth="2"
@@ -93,12 +88,12 @@ const GlobalSearchModal = ({ isOpen, onClose }) => {
               setSelectedIndex(-1);
             }}
             onKeyDown={handleKeyDown}
-            className="w-full bg-transparent text-[var(--ink)] outline-none text-base font-medium placeholder-[var(--ink-soft)]"
+            className="w-full bg-transparent text-gray-900 dark:text-white outline-none text-base font-medium placeholder-gray-400 dark:placeholder-gray-500"
             autoFocus
           />
           <button
             onClick={onClose}
-            className="font-mono-label text-[10px] font-semibold text-[var(--ink-soft)] hover:text-[var(--ink)] bg-[var(--paper)] border border-[var(--line)] px-2 py-1 rounded shrink-0"
+            className="font-mono text-[10px] font-semibold text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white bg-gray-100 dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 px-2 py-1 rounded shrink-0 transition-colors"
           >
             ESC
           </button>
@@ -107,28 +102,21 @@ const GlobalSearchModal = ({ isOpen, onClose }) => {
         {/* Results Box */}
         <div className="flex-1 overflow-y-auto p-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {loading && (
-            <div className="flex items-center justify-center gap-2 p-6 text-sm text-[var(--ink-soft)]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[var(--violet)] animate-node" />
-              <span
-                className="w-1.5 h-1.5 rounded-full bg-[var(--violet)] animate-node"
-                style={{ animationDelay: "0.2s" }}
-              />
-              <span
-                className="w-1.5 h-1.5 rounded-full bg-[var(--violet)] animate-node"
-                style={{ animationDelay: "0.4s" }}
-              />
-              <span className="ml-1">Searching your chats…</span>
+            <div className="flex items-center justify-center gap-3 p-6 text-sm text-gray-500 dark:text-gray-400">
+              <div className="w-5 h-5 border-2 border-emerald-200 dark:border-emerald-900 border-t-emerald-500 dark:border-t-emerald-400 rounded-full animate-spin"></div>
+
+              <span>Searching your chats…</span>
             </div>
           )}
 
           {!loading && query && results.length === 0 && (
-            <div className="p-6 text-center text-sm text-[var(--ink-soft)] italic">
+            <div className="p-6 text-center text-sm text-gray-500 dark:text-gray-400 italic">
               No old conversations match "{query}"
             </div>
           )}
 
           {!loading && !query && (
-            <div className="p-6 text-center text-xs font-mono-label text-[var(--ink-soft)] uppercase tracking-widest">
+            <div className="p-6 text-center text-xs font-mono text-gray-400 dark:text-gray-500 uppercase tracking-widest">
               Start typing to search
             </div>
           )}
@@ -140,19 +128,19 @@ const GlobalSearchModal = ({ isOpen, onClose }) => {
                 onClick={() => handleSelectChat(chat._id)}
                 className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all border-l-2 ${
                   idx === selectedIndex
-                    ? "bg-[var(--violet)]/10 text-[var(--ink)] font-medium border-l-[var(--amber)]"
-                    : "hover:bg-[var(--paper)] text-[var(--ink-soft)] border-l-transparent"
+                    ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-medium border-l-emerald-500"
+                    : "hover:bg-gray-100 dark:hover:bg-white/5 text-gray-600 dark:text-gray-400 border-l-transparent"
                 }`}
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <span className="shrink-0 w-6 h-6 rounded-full bg-[var(--violet)]/10 text-[var(--violet)] flex items-center justify-center text-xs">
+                  <span className="shrink-0 w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs">
                     💬
                   </span>
                   <p className="text-sm truncate">
                     {chat.title || "Untitled Chat"}
                   </p>
                 </div>
-                <span className="font-mono-label text-[10px] text-[var(--ink-soft)] shrink-0 ml-3">
+                <span className="font-mono text-[10px] text-gray-400 dark:text-gray-500 shrink-0 ml-3">
                   {new Date(chat.createdAt).toLocaleDateString("en-US", {
                     day: "numeric",
                     month: "short",

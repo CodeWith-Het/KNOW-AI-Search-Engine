@@ -137,7 +137,7 @@ const Register = () => {
           Already have an account?{" "}
           <Link
             to="/login"
-            className="text-white hover:text-emerald-400 font-medium transition-colors"
+            className="text-gray-900 dark:text-white hover:text-emerald-400 font-medium transition-colors"
           >
             Sign in here
           </Link>
