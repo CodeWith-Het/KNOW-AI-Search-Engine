@@ -7,7 +7,7 @@ const chatSlice = createSlice({
         chats: [],
         isActiveChatId : null,
         messages: [],
-        isError: null
+        isError: null,
     },
 
     reducers: {

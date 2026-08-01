@@ -156,5 +156,5 @@ const sendMessage = async (text, currentChatId) => {
             dispatch(setLoading(false))
         }
     } 
-        return { newChats, fetchAllChats,loadMessages,sendMessage,searchConversations,deleteChat}
+        return { newChats, fetchAllChats,loadMessages,sendMessage,searchConversations,deleteChat,streaming:true}
 }
