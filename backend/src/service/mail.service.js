@@ -1,33 +1,18 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-import sgMail from "@sendgrid/mail";
+import nodemailer from "nodemailer";
 
-// ------------------------------------
-// SendGrid Configuration
-// ------------------------------------
+const transporter = nodemailer.createTransport({
+  host: process.env.BREVO_SMTP_HOST,
+  port: Number(process.env.BREVO_SMTP_PORT),
+  secure: false,
 
-const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
-const SENDGRID_FROM = process.env.SENDGRID_FROM;
-
-// Check required environment variables
-if (!SENDGRID_API_KEY) {
-  console.error("❌ SENDGRID_API_KEY is missing in .env");
-}
-
-if (!SENDGRID_FROM) {
-  console.error("❌ SENDGRID_FROM is missing in .env");
-}
-
-// Set API key only if available
-if (SENDGRID_API_KEY) {
-  sgMail.setApiKey(SENDGRID_API_KEY);
-}
-
-
-// ------------------------------------
-// Send Email
-// ------------------------------------
+  auth: {
+    user: process.env.BREVO_SMTP_USER,
+    pass: process.env.BREVO_SMTP_PASSWORD,
+  },
+});
 
 export const sendmail = async ({
   to,
@@ -36,18 +21,20 @@ export const sendmail = async ({
   html,
 }) => {
 
-  // Validate configuration
-  if (!SENDGRID_API_KEY) {
-    throw new Error("SENDGRID_API_KEY is not configured.");
+  if (!process.env.BREVO_SMTP_USER) {
+    throw new Error("BREVO_SMTP_USER is not configured.");
   }
 
-  if (!SENDGRID_FROM) {
-    throw new Error("SENDGRID_FROM is not configured.");
+  if (!process.env.BREVO_SMTP_PASSWORD) {
+    throw new Error("BREVO_SMTP_PASSWORD is not configured.");
   }
 
-  // Validate email data
+  if (!process.env.BREVO_FROM_EMAIL) {
+    throw new Error("BREVO_FROM_EMAIL is not configured.");
+  }
+
   if (!to) {
-    throw new Error("Recipient email (to) is required.");
+    throw new Error("Recipient email is required.");
   }
 
   if (!subject) {
@@ -55,62 +42,31 @@ export const sendmail = async ({
   }
 
   if (!text && !html) {
-    throw new Error("Email must contain text or html content.");
+    throw new Error("Email must contain text or HTML content.");
   }
 
-
-  // ------------------------------------
-  // SendGrid Message
-  // ------------------------------------
-
-  const message = {
-    from: SENDGRID_FROM,
+  const mailOptions = {
+    from: `"${process.env.BREVO_FROM_NAME}" <${process.env.BREVO_FROM_EMAIL}>`,
     to,
     subject,
     text,
     html,
   };
 
-
-  // ------------------------------------
-  // Send Email
-  // ------------------------------------
-
   try {
+    const info = await transporter.sendMail(mailOptions);
 
-    const response = await sgMail.send(message);
-
-    console.log(`✅ Email successfully sent to ${to}`);
+    console.log(`✅ Email sent successfully to ${to}`);
+    console.log(`📩 Message ID: ${info.messageId}`);
 
     return {
       success: true,
       message: "Email sent successfully",
-      statusCode: response[0]?.statusCode,
+      messageId: info.messageId,
     };
-
   } catch (error) {
+    console.error("❌ Brevo Email Error:", error.message);
 
-    console.error("❌ SendGrid Email Error");
-
-    // SendGrid API error
-    if (error?.response?.body?.errors) {
-
-      console.error(
-        "SendGrid Errors:",
-        error.response.body.errors
-      );
-
-    } else {
-
-      console.error(
-        "Error:",
-        error?.message || error
-      );
-
-    }
-
-    // Important:
-    // Controller / Queue Worker can handle this error
     throw error;
   }
 };

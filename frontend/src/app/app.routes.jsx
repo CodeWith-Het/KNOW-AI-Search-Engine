@@ -8,8 +8,8 @@ import Chatwrapper from "../feature/chat/layout/Chatwrapper.jsx";
 const LandingPage = lazy(() => import("../Home/pages/LandingPage.jsx"));
 const Login = lazy(() => import("../feature/auth/pages/Login.jsx"));
 const Register = lazy(() => import("../feature/auth/pages/Register.jsx"));
-const VerifyEmail = lazy(() => import("../feature/auth/pages/VerifyEmail.jsx"));
 const Dashboard = lazy(() => import("../feature/chat/pages/Dashboard.jsx"));
+const VerifyOtp = lazy(() => import("../feature/auth/pages/VerifyOtp.jsx"));
 
 const PageLoader = () => (
   <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-gray-50 dark:bg-[#0a0a0a] transition-colors duration-300">
@@ -76,10 +76,10 @@ export const router = createBrowserRouter([
     ),
   },
   {
-    path: "/verify-email",
+    path: "/verify-otp",
     element: (
       <SuspenseWrapper>
-        <VerifyEmail />
+        <VerifyOtp />
       </SuspenseWrapper>
     ),
   },

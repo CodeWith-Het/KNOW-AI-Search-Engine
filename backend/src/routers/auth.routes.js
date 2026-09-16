@@ -1,13 +1,37 @@
-import { Router } from "express";
-import { getUser, loginUser, logoutUser, registerUser, verifyEmailUrl } from "../controllers/auth.controller.js";
-import { loginValidation, registerValidation } from '../validation/auth.validation.js';
+import express from "express";
+
+import {
+  registerUser,
+  verifyOtp,
+  loginUser,
+  getUser,
+  logoutUser,
+  googleAuth,
+  googleAuthCallback,
+} from "../controllers/auth.controller.js";
+
+import {
+  registerValidation,
+  otpValidation,
+  loginValidation,
+} from "../validation/auth.validation.js";
+
 import { authUser } from "../middleware/auth.middleware.js";
-const authRouter = Router()
 
-authRouter.post("/register", registerValidation, registerUser)
-authRouter.get("/verify-email", verifyEmailUrl)
-authRouter.post("/login",loginValidation,loginUser)
-authRouter.get("/getuser", authUser, getUser)
-authRouter.get("/logout",authUser,logoutUser)
+const router = express.Router();
 
-export default authRouter
+router.post("/register", registerValidation, registerUser);
+
+router.post("/verify-otp", otpValidation, verifyOtp);
+
+router.post("/login", loginValidation, loginUser);
+
+router.get("/me", authUser, getUser);
+
+router.post("/logout", authUser, logoutUser);
+
+router.get("/google", googleAuth);
+
+router.get("/google/callback", googleAuthCallback);
+
+export default router;

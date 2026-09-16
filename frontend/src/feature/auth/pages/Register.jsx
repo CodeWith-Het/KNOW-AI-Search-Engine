@@ -3,10 +3,13 @@ import { Link, useNavigate } from "react-router-dom";
 import { Toaster, toast } from "react-hot-toast";
 import AuthLayout from "./AuthLayout";
 import { register } from "../service/auth.api";
+import GoogleAuthButton from "../components/GoogleAuthButton";
 
 const Register = () => {
   const navigate = useNavigate();
+
   const [isSubmitting, setIsSubmitting] = useState(false);
+
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -14,11 +17,15 @@ const Register = () => {
   });
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     setIsSubmitting(true);
 
     try {
@@ -28,10 +35,16 @@ const Register = () => {
         password: formData.password,
       });
 
-      toast.success("Account created successfully. Please verify your email.");
-      navigate("/login");
+      toast.success("OTP sent successfully. Please verify your email.");
+
+      navigate(
+        `/verify-otp?email=${encodeURIComponent(formData.email.trim())}`,
+        {
+          replace: true,
+        },
+      );
     } catch (error) {
-      toast.error(error.message || "Registration failed. Please try again.");
+      toast.error(error?.message || "Registration failed. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -49,17 +62,18 @@ const Register = () => {
         strokeLinejoin="round"
         strokeWidth="2"
         d="M13 10V3L4 14h7v7l9-11h-7z"
-      ></path>
+      />
     </svg>
   );
 
   return (
     <>
       <Toaster position="top-right" />
+
       <AuthLayout
         leftTitle={
           <>
-            Start your <br />{" "}
+            Start your <br />
             <span className="text-emerald-500">Research Journey.</span>
           </>
         }
@@ -70,19 +84,24 @@ const Register = () => {
           <div className="lg:hidden w-10 h-10 bg-white text-black font-bold text-xl flex justify-center items-center rounded-sm mb-6">
             K
           </div>
+
           <h2 className="text-3xl font-bold tracking-tight">
             Create an account
           </h2>
+
           <p className="text-sm text-gray-400 mt-2">
             Get started with KNOW AI for free
           </p>
         </div>
 
+        {/* Register Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Username */}
           <div>
             <label className="block text-sm font-medium text-gray-400 mb-1.5">
               Username
             </label>
+
             <input
               type="text"
               name="username"
@@ -94,10 +113,12 @@ const Register = () => {
             />
           </div>
 
+          {/* Email */}
           <div>
             <label className="block text-sm font-medium text-gray-400 mb-1.5">
               Email Address
             </label>
+
             <input
               type="email"
               name="email"
@@ -109,10 +130,12 @@ const Register = () => {
             />
           </div>
 
+          {/* Password */}
           <div>
             <label className="block text-sm font-medium text-gray-400 mb-1.5">
               Password
             </label>
+
             <input
               type="password"
               name="password"
@@ -124,6 +147,7 @@ const Register = () => {
             />
           </div>
 
+          {/* Register Button */}
           <button
             type="submit"
             disabled={isSubmitting}
@@ -133,6 +157,19 @@ const Register = () => {
           </button>
         </form>
 
+        {/* Divider */}
+        <div className="my-6 flex items-center gap-4">
+          <div className="h-px flex-1 bg-white/10"></div>
+
+          <span className="text-xs text-gray-500 uppercase">Or</span>
+
+          <div className="h-px flex-1 bg-white/10"></div>
+        </div>
+
+        {/* Google Register */}
+        <GoogleAuthButton />
+
+        {/* Login */}
         <p className="text-center text-sm text-gray-500 mt-8">
           Already have an account?{" "}
           <Link
