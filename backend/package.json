@@ -23,6 +23,7 @@
     "@tavily/core": "^0.7.6",
     "axios": "^1.18.1",
     "bcryptjs": "^3.0.3",
+    "bullmq": "^6.3.6",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dns": "^0.2.2",
