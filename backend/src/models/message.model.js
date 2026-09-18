@@ -1,35 +1,41 @@
 import mongoose from "mongoose";
 
-const messageSchemaModel = new mongoose.Schema({
+const messageSchemaModel = new mongoose.Schema(
+  {
     chat: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "chat",
-        required: true,
-        index:true
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Chat",
+      required: true,
+      index: true,
     },
-    content: {
-        type: mongoose.Schema.Types.Mixed,
-        required:true
-    },
-    role: {
-        type: String,
-        enum: ["user", "ai"],
-        required:true
-    },
-    citations: {
-      type: [
-        {
-          id: Number,
-          title: String,
-          url: String,
-        },
-      ],
-      default: [],
-    }
-},
-    {
-    timestamps:true
-    })
 
-const messageModel = mongoose.model("message",messageSchemaModel)
-export default messageModel
+    role: {
+      type: String,
+      enum: ["user", "assistant"],
+      required: true,
+    },
+
+    content: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    isEdited: {
+      type: Boolean,
+      default: false,
+    },
+
+    editedAt: {
+      type: Date,
+      default: null,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+const MessageModel = mongoose.model("Message", messageSchemaModel);
+
+export default MessageModel

@@ -1,259 +1,461 @@
-import { generateChatTitle, generateResponse, streamAgentResponse } from "../service/ai.service.js"
-import chatModel from './../models/chat.model.js';
-import messageModel from './../models/message.model.js';
-import AppError from './../utils/AppError.js';
+import ChatModel from "../models/chat.model.js";
+import MessageModel from "../models/message.model.js";
 
-export const sendMessage = async (req, res, next) => {
-    try {
-        const { message, chat: chatId } = req.body
+import {
+  generateAIResponse,
+  generateChatTitle,
+} from "../service/ai.service.js";
 
-    if (!message?.trim()) {
-        return next(new AppError("Message is required",400,"MESSAGE_IS_REQUIRED"))
-    }
+/**
+ * Create New Chat
+ * POST /api/chats/
+ */
+export const createChat = async (req, res) => {
+  try {
+    const userId = req.user.id;
 
-    let createdChatId = chatId
+    const chat = await ChatModel.create({
+      user: userId,
+      title: "New Chat",
+    });
 
-    if (!chatId) {
-         const newChatData = await chatModel.create({
-            user: req.user.id,
-            title: message.trim().split(/\s+/).slice(0, 5).join(" ")
-         })
-         createdChatId = newChatData._id
+    return res.status(201).json({
+      success: true,
+      message: "Chat created successfully",
+      chat,
+    });
+  } catch (error) {
+    console.error("Create Chat Error:", error);
 
-         void generateChatTitle(message)
-            .then((title) => chatModel.updateOne({ _id: createdChatId }, { title }))
-            .catch((error) => console.error("Chat title generation error:", error.message))
-    }
-        
-    const userMessage = await messageModel.create({
-        chat: createdChatId,
-        content: message,
-        role:"user"
-    })
-
-    const messages = await messageModel.find({ chat: createdChatId });
-        
-    const { answer, citations } = await generateResponse(messages)
-
-    // Khaali answer kabhi save nahi hona chahiye (agle turn ki history todta hai)
-    const safeAnswer = answer?.trim()
-        ? answer
-        : "I couldn't generate a response for that. Please try rephrasing your question."
-
-    const aiMessage = await messageModel.create({
-        chat: createdChatId,
-        content: safeAnswer,
-        citations,
-        role:"ai"
-    })
-
-
-    res.status(200).json({
-        message: "chating successfully",
-        chatId: createdChatId,
-        aiMessage
-    })
-    }
-    catch (error) {
-       next(error)
-    }
-}
-
-export const sendMessageStream = async (req, res, next) => {
-
-    res.setHeader("Content-Type", "text/event-stream");
-    res.setHeader("Cache-Control", "no-cache");
-    res.setHeader("Connection", "keep-alive");
-    res.flushHeaders();
-
-    // Chhota helper — har event ko SSE ke sahi format mein bhejta hai
-    const sendEvent = (payload) => {
-        res.write(`data: ${JSON.stringify(payload)}\n\n`);
-    };
-
-    let createdChatId;
-
-    try {
-        const { message, chat: chatId } = req.body;
-
-        if (!message) {
-            sendEvent({ type: "error", message: "Message is required" });
-            return res.end();
-        }
-
-        createdChatId = chatId;
-
-        if (!chatId) {
-            const newChatData = await chatModel.create({
-                user: req.user.id,
-                title: message.trim().split(/\s+/).slice(0, 5).join(" "),
-            });
-            createdChatId = newChatData._id;
-
-            sendEvent({ type: "meta", chatId: createdChatId });
-
-            void generateChatTitle(message)
-                .then((title) => chatModel.updateOne({ _id: createdChatId }, { title }))
-                .catch((error) => console.error("Chat title generation error:", error.message));
-        }
-
-        await messageModel.create({
-            chat: createdChatId,
-            content: message,
-            role: "user",
-        });
-
-        const messages = await messageModel.find({ chat: createdChatId });
-
-        const { fullAnswer, citations } = await streamAgentResponse(
-            messages,
-            (token) => sendEvent({ type: "token", text: token }),
-            (status) => sendEvent({ type: "status", text: status }),
-        );
-
-        // Khaali answer kabhi DB mein save nahi hona chahiye — warna agle
-        // turn pe LLM API isse reject kar degi (empty assistant message)
-        const safeAnswer = fullAnswer?.trim()
-            ? fullAnswer
-            : "I couldn't generate a response for that. Please try rephrasing your question.";
-
-        if (!fullAnswer?.trim()) {
-            sendEvent({ type: "token", text: safeAnswer });
-        }
-
-        await messageModel.create({
-            chat: createdChatId,
-            content: safeAnswer,
-            citations,
-            role: "ai",
-        });
-
-        sendEvent({ type: "citations", citations });
-        sendEvent({ type: "done" });
-        res.end();
-    } catch (error) {
-        console.error("Stream error:", error.message);
-
-        // messageModel mein fallback save karne ki koshish karo taaki user ko pata chale ki kuch hua hai
-        try {
-            if (createdChatId) {
-                const fallbackAnswer =
-                    "Sorry, I ran into an error while processing that. Please try asking again.";
-                await messageModel.create({
-                    chat: createdChatId,
-                    content: fallbackAnswer,
-                    citations: [],
-                    role: "ai",
-                });
-                sendEvent({ type: "token", text: fallbackAnswer });
-            }
-        } catch (saveError) {
-            console.error("Fallback save error:", saveError.message);
-        }
-
-        sendEvent({ type: "error", message: error.message });
-        res.end();
-    }
+    return res.status(500).json({
+      success: false,
+      message:
+        process.env.NODE_ENV === "production"
+          ? "Failed to create chat"
+          : error.message,
+    });
+  }
 };
 
-export const getChats = async (req, res, next)=>{
-    try{
-        const user = req.user.id
+/**
+ * Get All Chats Of Logged-in User
+ * GET /api/chats/
+ */
+export const getUserChats = async (req, res) => {
+  try {
+    const userId = req.user.id;
 
-        const chats = await chatModel.find({user:user}).sort({createdAt:-1})
-
-        if(chats.length == 0){
-            return res.status(200).json({
-                success:true,
-                message: "chat not found. Welcome New User",
-                chats:[]
-            })
-        }
-
-        res.status(200).json({
-            success:true,
-            message:"chats fetched successfully",
-            chats
-        })
-    }
-    catch(error){
-       next(error)
-    }
-}
-
-export const getSearchChats = async (req, res, next) => {
-    try {
-            const userId = req.user.id
-
-    const { keyword } = req.params
-    
-    if (!keyword) {
-        return res.status(200).json({
-            success: true,
-            message: "No search keyword provided",
-            chats:[]
-        })
-    }
-
-    const matchChats = await chatModel.find({
-        user: userId,
-        title: { $regex: keyword, $options: "i" }
-    }).sort({ createdAt: -1 })
-    
-    res.status(200).json({
-        success: true,
-        message: "Chat successfully Search",
-        chats:matchChats
+    const chats = await ChatModel.find({
+      user: userId,
     })
-    }
-    catch (error) {
-        next(error)
-    }
-}
+      .sort({ updatedAt: -1 })
+      .lean();
 
-export const getMessages = async (req,res, next)=>{
-    try {
-        const { chatid: chatId } = req.params   
+    return res.status(200).json({
+      success: true,
+      chats,
+    });
+  } catch (error) {
+    console.error("Get User Chats Error:", error);
 
-        if(!chatId){
-            return next(new AppError("Chat Not Found",404,"CHAT_NOT_FOUND"))
+    return res.status(500).json({
+      success: false,
+      message:
+        process.env.NODE_ENV === "production"
+          ? "Failed to fetch chats"
+          : error.message,
+    });
+  }
+};
+
+/**
+ * Search Chats
+ * GET /api/chats/search?q=react
+ */
+export const searchChats = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { q } = req.query;
+
+    if (!q || !q.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Search query is required",
+      });
+    }
+
+    const chats = await ChatModel.find({
+      user: userId,
+      title: {
+        $regex: q.trim(),
+        $options: "i",
+      },
+    })
+      .sort({ updatedAt: -1 })
+      .lean();
+
+    return res.status(200).json({
+      success: true,
+      chats,
+    });
+  } catch (error) {
+    console.error("Search Chats Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message:
+        process.env.NODE_ENV === "production"
+          ? "Failed to search chats"
+          : error.message,
+    });
+  }
+};
+
+/**
+ * Get Specific Chat With Messages
+ * GET /api/chats/:chatId
+ */
+export const getChatById = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { chatId } = req.params;
+
+    const chat = await ChatModel.findOne({
+      _id: chatId,
+      user: userId,
+    }).lean();
+
+    if (!chat) {
+      return res.status(404).json({
+        success: false,
+        message: "Chat not found",
+      });
+    }
+
+    const messages = await MessageModel.find({
+      chat: chatId,
+    })
+      .sort({ createdAt: 1 })
+      .lean();
+
+    return res.status(200).json({
+      success: true,
+      chat,
+      messages,
+    });
+  } catch (error) {
+    console.error("Get Chat By ID Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message:
+        process.env.NODE_ENV === "production"
+          ? "Failed to fetch chat"
+          : error.message,
+    });
+  }
+};
+
+/**
+ * Get All Messages Of Specific Chat
+ * GET /api/chats/:chatId/message
+ */
+export const getChatMessages = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { chatId } = req.params;
+
+    // Verify that chat belongs to logged-in user
+    const chat = await ChatModel.findOne({
+      _id: chatId,
+      user: userId,
+    }).lean();
+
+    if (!chat) {
+      return res.status(404).json({
+        success: false,
+        message: "Chat not found",
+      });
+    }
+
+    const messages = await MessageModel.find({
+      chat: chatId,
+    })
+      .sort({ createdAt: 1 })
+      .lean();
+
+    return res.status(200).json({
+      success: true,
+      messages,
+    });
+  } catch (error) {
+    console.error("Get Chat Messages Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message:
+        process.env.NODE_ENV === "production"
+          ? "Failed to fetch messages"
+          : error.message,
+    });
+  }
+};
+
+/**
+ * Send Message
+ * POST /api/chats/message
+ */
+export const sendMessage = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { chatId, message } = req.body;
+
+    // Validate request
+    if (!chatId) {
+      return res.status(400).json({
+        success: false,
+        message: "Chat ID is required",
+      });
+    }
+
+    if (!message || !message.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Message is required",
+      });
+    }
+
+    const userMessage = message.trim();
+
+    // Verify chat ownership
+    const chat = await ChatModel.findOne({
+      _id: chatId,
+      user: userId,
+    });
+
+    if (!chat) {
+      return res.status(404).json({
+        success: false,
+        message: "Chat not found",
+      });
+    }
+
+    /**
+     * Check whether this is the first user message.
+     * Title will be generated ONLY once.
+     */
+    const previousUserMessageCount = await MessageModel.countDocuments({
+      chat: chatId,
+      role: "user",
+    });
+
+    const isFirstMessage = previousUserMessageCount === 0;
+
+    /**
+     * Save user message
+     */
+    const savedUserMessage = await MessageModel.create({
+      chat: chatId,
+      role: "user",
+      content: userMessage,
+    });
+
+    /**
+     * Get complete conversation history
+     * for Gemini Agent.
+     */
+    const conversationMessages = await MessageModel.find({
+      chat: chatId,
+    })
+      .sort({ createdAt: 1 })
+      .lean();
+
+    const aiMessages = conversationMessages.map((msg) => ({
+      role: msg.role,
+      content: msg.content,
+    }));
+
+    /**
+     * Generate AI response
+     */
+    const aiResponse = await generateAIResponse(aiMessages);
+
+    /**
+     * Save assistant message
+     */
+    const savedAssistantMessage = await MessageModel.create({
+      chat: chatId,
+      role: "assistant",
+      content: aiResponse,
+    });
+
+    /**
+     * Generate title ONLY for first user message.
+     */
+    let updatedChat = chat;
+
+    if (isFirstMessage) {
+      try {
+        const generatedTitle = await generateChatTitle(userMessage);
+
+        updatedChat = await ChatModel.findOneAndUpdate(
+          {
+            _id: chatId,
+            user: userId,
+          },
+          {
+            title: generatedTitle,
+          },
+          {
+            new: true,
+            runValidators: true,
+          }
+        );
+      } catch (titleError) {
+        /**
+         * Title generation failure should not
+         * make the entire chat request fail.
+         */
+        console.error("Generate Chat Title Error:", titleError);
+      }
+    } else {
+      /**
+       * Update chat timestamp for sorting.
+       */
+      updatedChat = await ChatModel.findOneAndUpdate(
+        {
+          _id: chatId,
+          user: userId,
+        },
+        {
+          $set: {
+            updatedAt: new Date(),
+          },
+        },
+        {
+          new: true,
         }
-
-        const messages = await messageModel.find({chat:chatId})
-
-        res.status(200).json({
-            success:true,
-            message:"Chat successfully fetched",
-            messages
-        })
-
-    } catch (error) {
-       next(error)
+      );
     }
-}
 
-export const deleteChat = async (req, res, next) => {
-    try {
-        const { chatid: chatId } = req.params
+    return res.status(201).json({
+      success: true,
+      message: "Message sent successfully",
 
-        if (!chatId) {
-           return next(new AppError("Chat Not Found",404,"CHAT_NOT_FOUND"))
-        }
+      chat: updatedChat,
 
-        const deletedChat = await chatModel.findByIdAndDelete(chatId)
+      userMessage: savedUserMessage,
 
-        if (!deletedChat) {
-            return next(new AppError("Chat Not Found",404,"CHAT_NOT_FOUND"))
-        }
+      assistantMessage: savedAssistantMessage,
+    });
+  } catch (error) {
+    console.error("Send Message Error:", error);
 
-        await messageModel.deleteMany({ chat: chatId })
+    return res.status(500).json({
+      success: false,
+      message:
+        process.env.NODE_ENV === "production"
+          ? "Failed to send message"
+          : error.message,
+    });
+  }
+};
 
-        res.status(200).json({
-            success: true,
-            message: "chat successfully deleted"
-        })
+/**
+ * Update Chat Title
+ * PATCH /api/chats/:chatId
+ */
+export const updateChatTitle = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { chatId } = req.params;
+    const { title } = req.body;
+
+    if (!title || !title.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Chat title is required",
+      });
     }
-    catch (error) {
-        next(error)
+
+    const chat = await ChatModel.findOneAndUpdate(
+      {
+        _id: chatId,
+        user: userId,
+      },
+      {
+        title: title.trim(),
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    if (!chat) {
+      return res.status(404).json({
+        success: false,
+        message: "Chat not found",
+      });
     }
-}
+
+    return res.status(200).json({
+      success: true,
+      message: "Chat title updated successfully",
+      chat,
+    });
+  } catch (error) {
+    console.error("Update Chat Title Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message:
+        process.env.NODE_ENV === "production"
+          ? "Failed to update chat title"
+          : error.message,
+    });
+  }
+};
+
+/**
+ * Delete Chat
+ * DELETE /api/chats/:chatId
+ */
+export const deleteChat = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { chatId } = req.params;
+
+    const chat = await ChatModel.findOneAndDelete({
+      _id: chatId,
+      user: userId,
+    });
+
+    if (!chat) {
+      return res.status(404).json({
+        success: false,
+        message: "Chat not found",
+      });
+    }
+
+    // Delete all messages belonging to this chat
+    await MessageModel.deleteMany({
+      chat: chatId,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Chat deleted successfully",
+    });
+  } catch (error) {
+    console.error("Delete Chat Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message:
+        process.env.NODE_ENV === "production"
+          ? "Failed to delete chat"
+          : error.message,
+    });
+  }
+};

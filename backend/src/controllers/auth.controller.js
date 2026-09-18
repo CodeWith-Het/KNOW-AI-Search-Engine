@@ -787,7 +787,7 @@ export const googleAuthCallback = async (
     // =================================================
 
     return res.redirect(
-      `${process.env.FRONTEND_URL}/chat`
+      `${process.env.FRONTEND_URL}/chats/${user._id}`
     );
   } catch (error) {
     console.error(

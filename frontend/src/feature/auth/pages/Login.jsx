@@ -41,14 +41,14 @@ const Login = () => {
     setIsSubmitting(true);
 
     try {
-      await loginUser({
+      const user = await loginUser({
         loginId: formData.loginId.trim(),
         password: formData.password,
       });
 
       toast.success("Signed in successfully.");
 
-      navigate("/chats", {
+      navigate(`/chats/${user.id}`, {
         replace: true,
       });
     } catch (error) {

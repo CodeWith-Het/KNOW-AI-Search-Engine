@@ -3,7 +3,6 @@ dotenv.config();
 
 import nodemailer from "nodemailer";
 
-// 1. Setup transporter using your exact SMTP variables
 const transporter = nodemailer.createTransport({
   host: process.env.BREVO_SMTP_HOST,
   port: Number(process.env.BREVO_SMTP_PORT),
@@ -14,7 +13,6 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// 2. Verify connection on startup
 transporter.verify((error, success) => {
   if (error) {
     console.error("❌ SMTP Connection Error:", error.message);
@@ -29,7 +27,7 @@ export const sendmail = async ({
   text,
   html,
 }) => {
-  // 3. Environment variable validations
+
   if (!process.env.BREVO_SMTP_USER || !process.env.BREVO_SMTP_PASSWORD) {
     throw new Error("SMTP credentials (USER/PASSWORD) are not configured.");
   }
@@ -43,7 +41,6 @@ export const sendmail = async ({
     throw new Error("Email must contain text or HTML content.");
   }
 
-  // 4. Mail options configuration
   const mailOptions = {
     from: `"${process.env.BREVO_FROM_NAME || 'App Support'}" <${process.env.BREVO_FROM_EMAIL}>`,
     to,
@@ -53,7 +50,7 @@ export const sendmail = async ({
   };
 
   try {
-    // 5. Send the email
+
     const info = await transporter.sendMail(mailOptions);
 
     console.log(`✅ Email sent successfully to ${to}`);
