@@ -45,6 +45,16 @@ const chatSlice = createSlice({
                 lastMessage.streaming = false;
             }
         },
+        setLastMessageError: (state, action) => {
+            const lastMessage = state.messages[state.messages.length - 1];
+
+            if (lastMessage?.role === 'ai') {
+                if (!lastMessage.content?.trim()) {
+                    lastMessage.content = action.payload;
+                }
+                lastMessage.streaming = false;
+            }
+        },
         setLastMessageCitations: (state, action) => {
             const lastMessage = state.messages[state.messages.length - 1];
 
@@ -58,5 +68,5 @@ const chatSlice = createSlice({
     }
 })
 
-export const {setActiveChatId,setLoading,setChats,setMessages,addNewMessages,appendToLastMessage,setLastMessageDone,setLastMessageCitations,setClearChat,setError} = chatSlice.actions
+export const {setActiveChatId,setLoading,setChats,setMessages,addNewMessages,appendToLastMessage,setLastMessageDone,setLastMessageError,setLastMessageCitations,setClearChat,setError} = chatSlice.actions
 export default chatSlice.reducer

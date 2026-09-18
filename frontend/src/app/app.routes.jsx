@@ -84,7 +84,7 @@ export const router = createBrowserRouter([
     ),
   },
   {
-    path: "/chat",
+    path: "/chats",
     element: (
       <Protected>
         <Chatwrapper>
@@ -107,7 +107,7 @@ export const router = createBrowserRouter([
   },
   {
     path: "/dashboard",
-    element: <Navigate to="/chat" replace />,
+    element: <Navigate to="/chats" replace />,
   },
   {
     path: "*",

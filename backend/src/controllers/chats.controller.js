@@ -7,20 +7,22 @@ export const sendMessage = async (req, res, next) => {
     try {
         const { message, chat: chatId } = req.body
 
+    if (!message?.trim()) {
+        return next(new AppError("Message is required",400,"MESSAGE_IS_REQUIRED"))
+    }
+
     let createdChatId = chatId
 
     if (!chatId) {
-        const title = await generateChatTitle(message)
-
-        if (!message) {
-            return next(new AppError("Message is requied for create chatId",400,"MESSAGE_IS_REQUIRED"))
-        }
-
          const newChatData = await chatModel.create({
             user: req.user.id,
-            title:title
+            title: message.trim().split(/\s+/).slice(0, 5).join(" ")
          })
          createdChatId = newChatData._id
+
+         void generateChatTitle(message)
+            .then((title) => chatModel.updateOne({ _id: createdChatId }, { title }))
+            .catch((error) => console.error("Chat title generation error:", error.message))
     }
         
     const userMessage = await messageModel.create({
@@ -82,14 +84,17 @@ export const sendMessageStream = async (req, res, next) => {
         createdChatId = chatId;
 
         if (!chatId) {
-            const title = await generateChatTitle(message);
             const newChatData = await chatModel.create({
                 user: req.user.id,
-                title,
+                title: message.trim().split(/\s+/).slice(0, 5).join(" "),
             });
             createdChatId = newChatData._id;
 
             sendEvent({ type: "meta", chatId: createdChatId });
+
+            void generateChatTitle(message)
+                .then((title) => chatModel.updateOne({ _id: createdChatId }, { title }))
+                .catch((error) => console.error("Chat title generation error:", error.message));
         }
 
         await messageModel.create({
@@ -112,6 +117,10 @@ export const sendMessageStream = async (req, res, next) => {
             ? fullAnswer
             : "I couldn't generate a response for that. Please try rephrasing your question.";
 
+        if (!fullAnswer?.trim()) {
+            sendEvent({ type: "token", text: safeAnswer });
+        }
+
         await messageModel.create({
             chat: createdChatId,
             content: safeAnswer,
@@ -128,13 +137,15 @@ export const sendMessageStream = async (req, res, next) => {
         // messageModel mein fallback save karne ki koshish karo taaki user ko pata chale ki kuch hua hai
         try {
             if (createdChatId) {
+                const fallbackAnswer =
+                    "Sorry, I ran into an error while processing that. Please try asking again.";
                 await messageModel.create({
                     chat: createdChatId,
-                    content:
-                        "Sorry, I ran into an error while processing that. Please try asking again.",
+                    content: fallbackAnswer,
                     citations: [],
                     role: "ai",
                 });
+                sendEvent({ type: "token", text: fallbackAnswer });
             }
         } catch (saveError) {
             console.error("Fallback save error:", saveError.message);

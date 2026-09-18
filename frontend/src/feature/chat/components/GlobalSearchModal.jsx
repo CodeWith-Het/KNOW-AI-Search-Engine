@@ -50,7 +50,7 @@ const GlobalSearchModal = ({ isOpen, onClose }) => {
 
   const handleSelectChat = (chatId) => {
     loadMessages(chatId);
-    navigate(`/chat/${chatId}`);
+    navigate(`/chats/${chatId}`);
     onClose();
     setQuery("");
     setSelectedIndex(-1);

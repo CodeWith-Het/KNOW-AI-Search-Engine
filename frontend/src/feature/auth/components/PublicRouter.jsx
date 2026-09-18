@@ -38,7 +38,7 @@ const PublicRouter = ({ children }) => {
   }
 
   if (user?.isVerified) {
-    return <Navigate to="/chat" replace />;
+    return <Navigate to="/chats" replace />;
   }
 
   if (user) {

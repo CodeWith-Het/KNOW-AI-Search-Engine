@@ -1,4 +1,4 @@
-import { useState,useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Toaster, toast } from "react-hot-toast";
 
@@ -48,7 +48,7 @@ const Login = () => {
 
       toast.success("Signed in successfully.");
 
-      navigate("/chat", {
+      navigate("/chats", {
         replace: true,
       });
     } catch (error) {

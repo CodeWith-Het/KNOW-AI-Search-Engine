@@ -121,9 +121,7 @@ const ChatScreen = () => {
           </button>
         </div>
         {/* Brand */}
-        <div
-          className="flex items-center gap-2 mb-4 mt-5 ml-5 text-xl font-bold tracking-tight text-gray-900 dark:text-white transition-colors"
-        >
+        <div className="flex items-center gap-2 mb-4 mt-5 ml-5 text-xl font-bold tracking-tight text-gray-900 dark:text-white transition-colors">
           <div className="w-8 h-8 bg-white text-black flex justify-center items-center rounded-sm">
             K
           </div>
@@ -187,7 +185,7 @@ const ChatScreen = () => {
                 key={index}
                 onClick={() => {
                   loadMessages(c._id);
-                  navigate(`/chat/${c._id}`);
+                  navigate(`/chats/${c._id}`);
                   setIsSidebarOpen(false);
                 }}
                 className={`group flex items-center justify-between px-3 py-2.5 text-sm rounded-lg cursor-pointer transition-colors ${

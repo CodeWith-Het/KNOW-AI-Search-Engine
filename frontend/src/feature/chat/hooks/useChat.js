@@ -1,5 +1,5 @@
 import { useDispatch } from 'react-redux';
-import { setActiveChatId,setLoading,setChats,setMessages,addNewMessages,appendToLastMessage,setLastMessageDone,setLastMessageCitations,setClearChat,setError } from '../chat.slice';
+import { setActiveChatId,setLoading,setChats,setMessages,addNewMessages,appendToLastMessage,setLastMessageDone,setLastMessageError,setLastMessageCitations,setClearChat,setError } from '../chat.slice';
 import { getChatsApi,getMessagesApi,getSearchChatsApi,deleteChatApi } from '../service/chatApi.service';
 import { useNavigate } from 'react-router-dom';
 
@@ -12,9 +12,11 @@ export const useChat = () => {
         dispatch(setClearChat()); 
     }
 
-    const fetchAllChats = async () => {
+    const fetchAllChats = async ({ silent = false } = {}) => {
         try {
-            dispatch(setLoading(true))
+        if (!silent) {
+          dispatch(setLoading(true))
+        }
 
             const response = await getChatsApi()
             dispatch(setChats(response.chats || response))
@@ -23,7 +25,9 @@ export const useChat = () => {
             dispatch(setError(error.message || "chats not fetch"))
         }
         finally {
+          if (!silent) {
             dispatch(setLoading(false))
+          }
         }
     }
 
@@ -70,47 +74,72 @@ const sendMessage = async (text, currentChatId) => {
 
     const decoder = new TextDecoder();
     let buffer = '';
+    let streamCompleted = false;
+
+    const handleEvent = (line) => {
+      if (!line.startsWith('data:')) return;
+
+      const payload = line.slice(5).trim();
+      if (!payload) return;
+
+      const event = JSON.parse(payload);
+
+      if (event.type === 'token') {
+        dispatch(appendToLastMessage(event.text || ''));
+      }
+
+      if (event.type === 'citations') {
+        dispatch(setLastMessageCitations(event.citations || []));
+      }
+
+      if (event.type === 'meta' && event.chatId) {
+        dispatch(setActiveChatId(event.chatId));
+        navigate(`/chats/${event.chatId}`);
+        awaitRefreshChats();
+      }
+
+      if (event.type === 'done') {
+        streamCompleted = true;
+        dispatch(setLastMessageDone());
+      }
+
+      if (event.type === 'error') {
+        streamCompleted = true;
+        dispatch(setError(event.message || 'Stream error'));
+        dispatch(setLastMessageError(event.message || 'Sorry, I ran into an error while processing that. Please try asking again.'));
+      }
+    };
+
+    const awaitRefreshChats = () => {
+      void fetchAllChats({ silent: true });
+    };
 
     while (true) {
       const { done, value } = await reader.read();
-      if (done) break;
+      if (done) {
+        buffer += decoder.decode();
+        break;
+      }
 
       buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n\n');
-      buffer = lines.pop();
+      const events = buffer.split(/\r?\n\r?\n/);
+      buffer = events.pop() || '';
 
-      for (const line of lines) {
-        if (!line.startsWith('data: ')) continue;
-
-        const event = JSON.parse(line.slice(6));
-
-        if (event.type === 'token') {
-          dispatch(appendToLastMessage(event.text));
-        }
-
-        if (event.type === 'citations') {
-          dispatch(setLastMessageCitations(event.citations));
-        }
-
-        if (event.type === 'meta' && !currentChatId) {
-          dispatch(setActiveChatId(event.chatId));
-          navigate(`/chat/${event.chatId}`);
-        }
-
-        if (event.type === 'done') {
-          dispatch(setLastMessageDone());
-          dispatch(setLoading(false));
-        }
-
-        if (event.type === 'error') {
-          dispatch(setError(event.message || 'Stream error'));
-          dispatch(setLastMessageDone());
-          dispatch(setLoading(false));
-        }
+      for (const event of events) {
+        handleEvent(event);
       }
+    }
+
+    if (buffer.trim()) {
+      handleEvent(buffer);
+    }
+
+    if (!streamCompleted) {
+      dispatch(setLastMessageDone());
     }
   } catch (err) {
     dispatch(setError(err.message || 'Stream failed'));
+    dispatch(setLastMessageError('Sorry, I ran into an error while processing that. Please try asking again.'));
   } finally {
     dispatch(setLoading(false));
   }
