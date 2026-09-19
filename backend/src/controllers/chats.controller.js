@@ -1,461 +1,275 @@
+import mongoose from "mongoose";
 import ChatModel from "../models/chat.model.js";
 import MessageModel from "../models/message.model.js";
+import { generateAIResponse, generateChatTitle } from "../service/ai.service.js";
+import { emitChatMessage } from "../socket/server.socket.js";
 
-import {
-  generateAIResponse,
-  generateChatTitle,
-} from "../service/ai.service.js";
-
-/**
- * Create New Chat
- * POST /api/chats/
- */
+// =====================================================
+// CREATE NEW CHAT
+// =====================================================
 export const createChat = async (req, res) => {
   try {
     const userId = req.user.id;
-
     const chat = await ChatModel.create({
       user: userId,
       title: "New Chat",
     });
 
-    return res.status(201).json({
-      success: true,
-      message: "Chat created successfully",
-      chat,
-    });
+    return res.status(201).json({ success: true, message: "Chat created successfully", chat });
   } catch (error) {
-    console.error("Create Chat Error:", error);
-
+    console.error("❌ Create Chat Error:", error);
     return res.status(500).json({
       success: false,
-      message:
-        process.env.NODE_ENV === "production"
-          ? "Failed to create chat"
-          : error.message,
+      message: process.env.NODE_ENV === "production" ? "Failed to create chat" : error.message,
     });
   }
 };
 
-/**
- * Get All Chats Of Logged-in User
- * GET /api/chats/
- */
+// =====================================================
+// GET ALL USER CHATS
+// =====================================================
 export const getUserChats = async (req, res) => {
   try {
     const userId = req.user.id;
-
-    const chats = await ChatModel.find({
-      user: userId,
-    })
-      .sort({ updatedAt: -1 })
-      .lean();
-
-    return res.status(200).json({
-      success: true,
-      chats,
-    });
+    const chats = await ChatModel.find({ user: userId }).sort({ updatedAt: -1 }).lean();
+    return res.status(200).json({ success: true, chats });
   } catch (error) {
-    console.error("Get User Chats Error:", error);
-
+    console.error("❌ Get User Chats Error:", error);
     return res.status(500).json({
       success: false,
-      message:
-        process.env.NODE_ENV === "production"
-          ? "Failed to fetch chats"
-          : error.message,
+      message: process.env.NODE_ENV === "production" ? "Failed to fetch chats" : error.message,
     });
   }
 };
 
-/**
- * Search Chats
- * GET /api/chats/search?q=react
- */
+// =====================================================
+// SEARCH CHATS
+// =====================================================
 export const searchChats = async (req, res) => {
   try {
     const userId = req.user.id;
     const { q } = req.query;
 
     if (!q || !q.trim()) {
-      return res.status(400).json({
-        success: false,
-        message: "Search query is required",
-      });
+      return res.status(400).json({ success: false, message: "Search query is required" });
     }
 
     const chats = await ChatModel.find({
       user: userId,
-      title: {
-        $regex: q.trim(),
-        $options: "i",
-      },
-    })
-      .sort({ updatedAt: -1 })
-      .lean();
+      title: { $regex: q.trim(), $options: "i" },
+    }).sort({ updatedAt: -1 }).lean();
 
-    return res.status(200).json({
-      success: true,
-      chats,
-    });
+    return res.status(200).json({ success: true, chats });
   } catch (error) {
-    console.error("Search Chats Error:", error);
-
+    console.error("❌ Search Chats Error:", error);
     return res.status(500).json({
       success: false,
-      message:
-        process.env.NODE_ENV === "production"
-          ? "Failed to search chats"
-          : error.message,
+      message: process.env.NODE_ENV === "production" ? "Failed to search chats" : error.message,
     });
   }
 };
 
-/**
- * Get Specific Chat With Messages
- * GET /api/chats/:chatId
- */
+// =====================================================
+// GET SINGLE CHAT
+// =====================================================
 export const getChatById = async (req, res) => {
   try {
     const userId = req.user.id;
     const { chatId } = req.params;
 
-    const chat = await ChatModel.findOne({
-      _id: chatId,
-      user: userId,
-    }).lean();
-
-    if (!chat) {
-      return res.status(404).json({
-        success: false,
-        message: "Chat not found",
-      });
+    if (!mongoose.Types.ObjectId.isValid(chatId)) {
+      return res.status(400).json({ success: false, message: "Invalid Chat ID" });
     }
 
-    const messages = await MessageModel.find({
-      chat: chatId,
-    })
-      .sort({ createdAt: 1 })
-      .lean();
+    const chat = await ChatModel.findOne({ _id: chatId, user: userId }).lean();
+    if (!chat) return res.status(404).json({ success: false, message: "Chat not found" });
 
-    return res.status(200).json({
-      success: true,
-      chat,
-      messages,
-    });
+    const messages = await MessageModel.find({ chat: chatId }).sort({ createdAt: 1 }).lean();
+    return res.status(200).json({ success: true, chat, messages });
   } catch (error) {
-    console.error("Get Chat By ID Error:", error);
-
+    console.error("❌ Get Chat By ID Error:", error);
     return res.status(500).json({
       success: false,
-      message:
-        process.env.NODE_ENV === "production"
-          ? "Failed to fetch chat"
-          : error.message,
+      message: process.env.NODE_ENV === "production" ? "Failed to fetch chat" : error.message,
     });
   }
 };
 
-/**
- * Get All Messages Of Specific Chat
- * GET /api/chats/:chatId/message
- */
+// =====================================================
+// GET CHAT MESSAGES
+// =====================================================
 export const getChatMessages = async (req, res) => {
   try {
     const userId = req.user.id;
     const { chatId } = req.params;
 
-    // Verify that chat belongs to logged-in user
-    const chat = await ChatModel.findOne({
-      _id: chatId,
-      user: userId,
-    }).lean();
-
-    if (!chat) {
-      return res.status(404).json({
-        success: false,
-        message: "Chat not found",
-      });
+    if (!mongoose.Types.ObjectId.isValid(chatId)) {
+      return res.status(400).json({ success: false, message: "Invalid Chat ID" });
     }
 
-    const messages = await MessageModel.find({
-      chat: chatId,
-    })
-      .sort({ createdAt: 1 })
-      .lean();
+    const chat = await ChatModel.findOne({ _id: chatId, user: userId }).lean();
+    if (!chat) return res.status(404).json({ success: false, message: "Chat not found" });
 
-    return res.status(200).json({
-      success: true,
-      messages,
-    });
+    const messages = await MessageModel.find({ chat: chatId }).sort({ createdAt: 1 }).lean();
+    return res.status(200).json({ success: true, messages });
   } catch (error) {
-    console.error("Get Chat Messages Error:", error);
-
+    console.error("❌ Get Chat Messages Error:", error);
     return res.status(500).json({
       success: false,
-      message:
-        process.env.NODE_ENV === "production"
-          ? "Failed to fetch messages"
-          : error.message,
+      message: process.env.NODE_ENV === "production" ? "Failed to fetch messages" : error.message,
     });
   }
 };
 
-/**
- * Send Message
- * POST /api/chats/message
- */
+// =====================================================
+// SEND MESSAGE (POST /api/chats/:chatId/message)
+// =====================================================
 export const sendMessage = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { chatId, message } = req.body;
+    const { chatId } = req.params;
+    const { message } = req.body;
 
-    // Validate request
-    if (!chatId) {
-      return res.status(400).json({
-        success: false,
-        message: "Chat ID is required",
-      });
+    if (!chatId || !mongoose.Types.ObjectId.isValid(chatId)) {
+      return res.status(400).json({ success: false, message: "Invalid Chat ID" });
     }
-
     if (!message || !message.trim()) {
-      return res.status(400).json({
-        success: false,
-        message: "Message is required",
-      });
+      return res.status(400).json({ success: false, message: "Message is required" });
     }
 
     const userMessage = message.trim();
+    const chat = await ChatModel.findOne({ _id: chatId, user: userId });
+    if (!chat) return res.status(404).json({ success: false, message: "Chat not found" });
 
-    // Verify chat ownership
-    const chat = await ChatModel.findOne({
-      _id: chatId,
-      user: userId,
-    });
-
-    if (!chat) {
-      return res.status(404).json({
-        success: false,
-        message: "Chat not found",
-      });
-    }
-
-    /**
-     * Check whether this is the first user message.
-     * Title will be generated ONLY once.
-     */
-    const previousUserMessageCount = await MessageModel.countDocuments({
-      chat: chatId,
-      role: "user",
-    });
-
+    const previousUserMessageCount = await MessageModel.countDocuments({ chat: chat._id, role: "user" });
     const isFirstMessage = previousUserMessageCount === 0;
 
-    /**
-     * Save user message
-     */
     const savedUserMessage = await MessageModel.create({
-      chat: chatId,
+      chat: chat._id,
       role: "user",
       content: userMessage,
     });
 
-    /**
-     * Get complete conversation history
-     * for Gemini Agent.
-     */
-    const conversationMessages = await MessageModel.find({
-      chat: chatId,
-    })
-      .sort({ createdAt: 1 })
-      .lean();
-
+    const conversationMessages = await MessageModel.find({ chat: chat._id }).sort({ createdAt: 1 }).lean();
     const aiMessages = conversationMessages.map((msg) => ({
-      role: msg.role,
+      role: msg.role === "assistant" ? "assistant" : "user",
       content: msg.content,
     }));
 
-    /**
-     * Generate AI response
-     */
-    const aiResponse = await generateAIResponse(aiMessages);
+    let aiResponse;
+    try {
+      aiResponse = await generateAIResponse(aiMessages);
+    } catch (aiError) {
+      console.error("❌ AI RESPONSE ERROR:", aiError);
+      await MessageModel.findByIdAndDelete(savedUserMessage._id);
+      return res.status(502).json({
+        success: false,
+        message: process.env.NODE_ENV === "production" ? "AI service failed" : aiError.message,
+      });
+    }
 
-    /**
-     * Save assistant message
-     */
+    if (!aiResponse || !aiResponse.trim()) {
+      await MessageModel.findByIdAndDelete(savedUserMessage._id);
+      return res.status(502).json({ success: false, message: "AI returned an empty response" });
+    }
+
     const savedAssistantMessage = await MessageModel.create({
-      chat: chatId,
+      chat: chat._id,
       role: "assistant",
-      content: aiResponse,
+      content: aiResponse.trim(),
     });
 
-    /**
-     * Generate title ONLY for first user message.
-     */
     let updatedChat = chat;
-
     if (isFirstMessage) {
       try {
         const generatedTitle = await generateChatTitle(userMessage);
-
-        updatedChat = await ChatModel.findOneAndUpdate(
-          {
-            _id: chatId,
-            user: userId,
-          },
-          {
-            title: generatedTitle,
-          },
-          {
-            new: true,
-            runValidators: true,
-          }
-        );
-      } catch (titleError) {
-        /**
-         * Title generation failure should not
-         * make the entire chat request fail.
-         */
-        console.error("Generate Chat Title Error:", titleError);
-      }
-    } else {
-      /**
-       * Update chat timestamp for sorting.
-       */
-      updatedChat = await ChatModel.findOneAndUpdate(
-        {
-          _id: chatId,
-          user: userId,
-        },
-        {
-          $set: {
-            updatedAt: new Date(),
-          },
-        },
-        {
-          new: true,
+        if (generatedTitle) {
+          updatedChat = await ChatModel.findOneAndUpdate(
+            { _id: chat._id, user: userId },
+            { $set: { title: generatedTitle, updatedAt: new Date() } },
+            { new: true, runValidators: true }
+          );
         }
+      } catch (titleError) {
+        console.error("⚠️ Generate Chat Title Error:", titleError.message);
+      }
+    }
+
+    if (!isFirstMessage) {
+      updatedChat = await ChatModel.findOneAndUpdate(
+        { _id: chat._id, user: userId },
+        { $set: { updatedAt: new Date() } },
+        { new: true }
       );
     }
+
+    if (!updatedChat) updatedChat = chat;
+
+    emitChatMessage(chat._id.toString(), {
+      chat: updatedChat,
+      userMessage: savedUserMessage,
+      assistantMessage: savedAssistantMessage,
+    });
 
     return res.status(201).json({
       success: true,
       message: "Message sent successfully",
-
       chat: updatedChat,
-
       userMessage: savedUserMessage,
-
       assistantMessage: savedAssistantMessage,
     });
   } catch (error) {
-    console.error("Send Message Error:", error);
-
+    console.error("❌ SEND MESSAGE ERROR:", error);
     return res.status(500).json({
       success: false,
-      message:
-        process.env.NODE_ENV === "production"
-          ? "Failed to send message"
-          : error.message,
+      message: process.env.NODE_ENV === "production" ? "Failed to send message" : error.message,
     });
   }
 };
 
-/**
- * Update Chat Title
- * PATCH /api/chats/:chatId
- */
+// =====================================================
+// UPDATE CHAT TITLE
+// =====================================================
 export const updateChatTitle = async (req, res) => {
   try {
     const userId = req.user.id;
     const { chatId } = req.params;
     const { title } = req.body;
 
-    if (!title || !title.trim()) {
-      return res.status(400).json({
-        success: false,
-        message: "Chat title is required",
-      });
-    }
+    if (!title || !title.trim()) return res.status(400).json({ success: false, message: "Chat title is required" });
+    if (!mongoose.Types.ObjectId.isValid(chatId)) return res.status(400).json({ success: false, message: "Invalid Chat ID" });
 
     const chat = await ChatModel.findOneAndUpdate(
-      {
-        _id: chatId,
-        user: userId,
-      },
-      {
-        title: title.trim(),
-      },
-      {
-        new: true,
-        runValidators: true,
-      }
+      { _id: chatId, user: userId },
+      { $set: { title: title.trim(), updatedAt: new Date() } },
+      { new: true, runValidators: true }
     );
 
-    if (!chat) {
-      return res.status(404).json({
-        success: false,
-        message: "Chat not found",
-      });
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: "Chat title updated successfully",
-      chat,
-    });
+    if (!chat) return res.status(404).json({ success: false, message: "Chat not found" });
+    return res.status(200).json({ success: true, message: "Chat title updated successfully", chat });
   } catch (error) {
-    console.error("Update Chat Title Error:", error);
-
-    return res.status(500).json({
-      success: false,
-      message:
-        process.env.NODE_ENV === "production"
-          ? "Failed to update chat title"
-          : error.message,
-    });
+    console.error("❌ Update Chat Title Error:", error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
-/**
- * Delete Chat
- * DELETE /api/chats/:chatId
- */
+// =====================================================
+// DELETE CHAT
+// =====================================================
 export const deleteChat = async (req, res) => {
   try {
     const userId = req.user.id;
     const { chatId } = req.params;
 
-    const chat = await ChatModel.findOneAndDelete({
-      _id: chatId,
-      user: userId,
-    });
+    if (!mongoose.Types.ObjectId.isValid(chatId)) return res.status(400).json({ success: false, message: "Invalid Chat ID" });
 
-    if (!chat) {
-      return res.status(404).json({
-        success: false,
-        message: "Chat not found",
-      });
-    }
+    const chat = await ChatModel.findOneAndDelete({ _id: chatId, user: userId });
+    if (!chat) return res.status(404).json({ success: false, message: "Chat not found" });
 
-    // Delete all messages belonging to this chat
-    await MessageModel.deleteMany({
-      chat: chatId,
-    });
-
-    return res.status(200).json({
-      success: true,
-      message: "Chat deleted successfully",
-    });
+    await MessageModel.deleteMany({ chat: chatId });
+    return res.status(200).json({ success: true, message: "Chat deleted successfully", chatId });
   } catch (error) {
-    console.error("Delete Chat Error:", error);
-
-    return res.status(500).json({
-      success: false,
-      message:
-        process.env.NODE_ENV === "production"
-          ? "Failed to delete chat"
-          : error.message,
-    });
+    console.error("❌ Delete Chat Error:", error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 };

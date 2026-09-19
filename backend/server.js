@@ -1,22 +1,18 @@
-import dotenv from "dotenv";
-dotenv.config();
+import dotenv from "dotenv"
+dotenv.config()
 
+import http from "http";
 import app from "./src/app.js";
-import http from "http"
+import { initSocket } from "./src/socket/server.socket.js";
 import connectToDB from "./src/config/database.js";
-// import { initSocket } from './src/socket/server.socket.js';
 
-// const httpServer = http.createServer(app)
+const server = http.createServer(app);
 
-// initSocket(httpServer)
-
+initSocket(server);
 connectToDB();
 
-// httpServer.listen(3000, () => {
-//   console.log("Server Started at port 3000")
-// });
+const port = Number(process.env.PORT) || 3000;
 
-
-app.listen(3000, () => {
-  console.log("server started at port 3000")
-})
+server.listen(port, "0.0.0.0", () => {
+  console.log(`Server running on port ${port}`);
+});

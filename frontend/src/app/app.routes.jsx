@@ -2,7 +2,7 @@ import React, { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import PublicRouter from "../feature/auth/components/PublicRouter.jsx";
-import Navbar from "../feature/chat/components/Navbar.jsx";
+import Protected from "../feature/auth/components/Protected.jsx";
 
 // Lazy loaded pages
 const LandingPage = lazy(() => import("../Home/pages/LandingPage.jsx"));
@@ -12,6 +12,8 @@ const Login = lazy(() => import("../feature/auth/pages/Login.jsx"));
 const Register = lazy(() => import("../feature/auth/pages/Register.jsx"));
 
 const VerifyOtp = lazy(() => import("../feature/auth/pages/VerifyOtp.jsx"));
+
+const ChatPage = lazy(() => import("../feature/chat/pages/ChatPage.jsx"));
 
 // Page Loader
 const PageLoader = () => (
@@ -128,11 +130,26 @@ const AppRouter = () => {
         />
 
         {/* chats */}
-        <Route path="/chats" element={
-          <SuspenseWrapper>
-            <Navbar />
-          </SuspenseWrapper>
-        } />
+        <Route
+          path="/chats"
+          element={
+            <Protected>
+              <SuspenseWrapper>
+                <ChatPage />
+              </SuspenseWrapper>
+            </Protected>
+          }
+        />
+        <Route
+          path="/chats/:chatId"
+          element={
+            <Protected>
+              <SuspenseWrapper>
+                <ChatPage />
+              </SuspenseWrapper>
+            </Protected>
+          }
+        />
 
         {/* 404 → Home */}
         <Route path="*" element={<Navigate to="/" replace />} />

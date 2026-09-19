@@ -1,13 +1,24 @@
+import dotenv from "dotenv";
+dotenv.config();
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 
-const geminiModel = new ChatGoogleGenerativeAI({
+const apiKey = process.env.GEMINI_API_KEY;
+
+if (!apiKey) {
+  throw new Error("GEMINI_API_KEY is missing in .env");
+}
+
+// Title ke liye low temperature = accurate & precise output
+const titleModel = new ChatGoogleGenerativeAI({
   model: "gemini-2.5-flash",
   temperature: 0.3,
-  apiKey: process.env.GOOGLE_API_KEY,
+  apiKey,
+  maxRetries: 2,
 });
 
 export const generateChatTitle = async (userMessage) => {
-  const prompt = `
+  try {
+    const prompt = `
 Generate a short and meaningful title for a chat based ONLY on the user's first message.
 
 User's first message:
@@ -21,7 +32,14 @@ Rules:
 - Do not use emojis.
 `;
 
-  const response = await geminiModel.invoke(prompt);
-
-  return response.content.toString().trim();
+    const response = await titleModel.invoke(prompt);
+    
+    // Response se direct string nikal kar clean karna
+    const title = response.content.toString().trim().replace(/^["']|["']$/g, "");
+    
+    return title.slice(0, 80) || "New Chat";
+  } catch (error) {
+    console.error("❌ Chat title generation failed:", error.message);
+    return "New Chat"; // Fallback agar API fail ho jaye
+  }
 };
