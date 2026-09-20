@@ -1,4 +1,4 @@
-import { geminiModel, systemPrompt } from "../ai/ai.agent.js";
+import { geminiModel, nvidiaModel, systemPrompt } from "../ai/ai.agent.js";
 import { SystemMessage, HumanMessage, AIMessage } from "@langchain/core/messages";
 import { generateChatTitle } from "../ai/ai.title.js";
 
@@ -10,17 +10,24 @@ const contentToText = (content) => {
   return String(content ?? "");
 };
 
+// 🔥 MODEL ROUTER LOGIC
+const getModelForMode = (mode) => {
+  // Agar mode web ya deep_research hai, toh Nvidia use karo (High Quality). Warna Gemini.
+  return (mode === "web" || mode === "deep_research") ? nvidiaModel : geminiModel;
+};
+
 // Standard full response
-export const generateAIResponse = async (messages) => {
+export const generateAIResponse = async (messages, mode = "normal") => {
   try {
     const formattedMessages = [
-      new SystemMessage(systemPrompt),
+      new SystemMessage(systemPrompt()), 
       ...messages.map(msg => 
         msg.role === "user" ? new HumanMessage(msg.content) : new AIMessage(msg.content)
       )
     ];
 
-    const response = await geminiModel.invoke(formattedMessages);
+    const activeModel = getModelForMode(mode);
+    const response = await activeModel.invoke(formattedMessages);
     const content = contentToText(response.content).trim();
 
     if (!content) throw new Error("AI returned an empty response");
@@ -31,18 +38,20 @@ export const generateAIResponse = async (messages) => {
   }
 };
 
-// ⚡ New Streaming Function
-export const streamAIResponse = async (messages) => {
+// ⚡ New Streaming Function with Mode Switching
+export const streamAIResponse = async (messages, mode = "normal") => {
   try {
     const formattedMessages = [
-      new SystemMessage(systemPrompt),
+      new SystemMessage(systemPrompt()), 
       ...messages.map(msg => 
         msg.role === "user" ? new HumanMessage(msg.content) : new AIMessage(msg.content)
       )
     ];
 
-    // Returns an async iterable stream instead of waiting for the full block
-    const stream = await geminiModel.stream(formattedMessages);
+    const activeModel = getModelForMode(mode);
+    console.log(`🧠 Router Selected Model: ${mode === "normal" ? "Gemini 2.5 Flash" : "Nvidia Nemotron Ultra"} (Mode: ${mode})`);
+
+    const stream = await activeModel.stream(formattedMessages);
     return stream;
   } catch (error) {
     console.error("❌ streamAIResponse ERROR:", error);

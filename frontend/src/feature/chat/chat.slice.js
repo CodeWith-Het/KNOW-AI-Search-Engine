@@ -6,6 +6,8 @@ import {
   getChat,
   getChats,
   searchChats,
+  togglePinChat as togglePinChatRequest,
+  updateChatTitle as updateChatTitleRequest,
 } from "./service/chatApi.service.js";
 
 /* =====================================================
@@ -86,14 +88,13 @@ export const loadChat = createAsyncThunk(
   },
 );
 
-// 🔥 MAIN FIX IS HERE 🔥
 export const sendMessageStream = createAsyncThunk(
   "chat/sendMessageStream",
-  async ({ chatId, message }, { dispatch }) => {
+  async ({ chatId, message, mode }, { dispatch }) => {
+    // MODE ADDED
     try {
       dispatch(setSending(true));
 
-      // 1. User ka message turant UI me dikhao
       dispatch(
         addMessage({
           _id: Date.now().toString(),
@@ -102,49 +103,39 @@ export const sendMessageStream = createAsyncThunk(
         }),
       );
 
-      // 2. AI ke liye ek khali (empty) message placeholder banao
       const aiMessageId = (Date.now() + 1).toString();
       dispatch(
         addMessage({
           _id: aiMessageId,
           role: "assistant",
           content: "",
+          status: "Thinking...",
+          citations: [],
         }),
       );
 
-      // 🔥 FIX: Agar chatId nahi hai (new chat), toh 'new' bhej do
       const activeChatId = chatId || "new";
 
-      // 3. Fetch API se stream call karo
       const response = await fetch(
         `${import.meta.env.VITE_BACKEND_URL}/api/chats/${activeChatId}/message/stream`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify({ message }), // Body se chatId nikal diya
+          body: JSON.stringify({ message, mode }), // BHEJA MODE
         },
       );
 
-      if (!response.body)
-        throw new Error("ReadableStream not supported in this browser.");
+      if (!response.body || !response.ok)
+        throw new Error("Failed to connect to stream");
 
-      if (!response.ok) {
-        throw new Error(`Unable to send your message (${response.status})`);
-      }
-
-      // 4. Stream Reader setup
       const reader = response.body.getReader();
       const decoder = new TextDecoder("utf-8");
       let buffer = "";
-
       let newGeneratedChatId = chatId;
 
       while (true) {
         const { value, done } = await reader.read();
-
         if (done) {
           buffer += decoder.decode();
           break;
@@ -162,13 +153,31 @@ export const sendMessageStream = createAsyncThunk(
 
           const parsedData = JSON.parse(dataLine.slice(6));
 
-          if (parsedData.type === "chat_id" && parsedData.chatId) {
+          if (parsedData.type === "chat_id") {
             newGeneratedChatId = parsedData.chatId;
             dispatch(setChatId(parsedData.chatId));
             window.history.replaceState({}, "", `/chats/${parsedData.chatId}`);
           }
 
-          if (parsedData.type === "token" && parsedData.content) {
+          // 🔥 NEW STATUS & CITATION EVENTS
+          if (parsedData.type === "status") {
+            dispatch(
+              updateMessageStatus({
+                messageId: aiMessageId,
+                status: parsedData.content,
+              }),
+            );
+          }
+          if (parsedData.type === "citations") {
+            dispatch(
+              updateMessageCitations({
+                messageId: aiMessageId,
+                citations: parsedData.citations,
+              }),
+            );
+          }
+
+          if (parsedData.type === "token") {
             dispatch(
               appendTokenToMessage({
                 messageId: aiMessageId,
@@ -176,21 +185,44 @@ export const sendMessageStream = createAsyncThunk(
               }),
             );
           }
-
-          if (parsedData.type === "title") {
+          if (parsedData.type === "title")
             dispatch(updateChatTitle(parsedData.title));
-          }
-
           if (parsedData.type === "done") dispatch(setSending(false));
           if (parsedData.type === "error") throw new Error(parsedData.message);
         }
       }
-
       return newGeneratedChatId;
     } catch (error) {
-      console.error("Stream parsing error:", error);
       dispatch(setSending(false));
       throw error;
+    }
+  },
+);
+
+export const renameChat = createAsyncThunk(
+  "chat/renameChat",
+  async ({ chatId, title }, { rejectWithValue }) => {
+    try {
+      if (!chatId) throw new Error("Chat ID is required");
+      const updatedChat = await updateChatTitleRequest(chatId, title);
+      if (!updatedChat?._id) throw new Error("Chat rename response was invalid");
+      return updatedChat;
+    } catch (error) {
+      return rejectWithValue(error.message || "Unable to rename chat");
+    }
+  },
+);
+
+export const toggleChatPin = createAsyncThunk(
+  "chat/toggleChatPin",
+  async ({ chatId, pinned }, { rejectWithValue }) => {
+    try {
+      if (!chatId) throw new Error("Chat ID is required");
+      const updatedChat = await togglePinChatRequest(chatId, pinned);
+      if (!updatedChat?._id) throw new Error("Chat pin response was invalid");
+      return updatedChat;
+    } catch (error) {
+      return rejectWithValue(error.message || (pinned ? "Unable to pin chat" : "Unable to unpin chat"));
     }
   },
 );
@@ -254,34 +286,42 @@ const appendMessages = (messages, newMessages = []) => {
 
 const chatSlice = createSlice({
   name: "chat",
-
-  initialState,
-
+  initialState: {
+    chats: [],
+    activeChat: null,
+    messages: [],
+    loading: false,
+    creating: false,
+    sending: false,
+    deleting: false,
+    searching: false,
+    socketConnected: false,
+    error: null,
+  },
   reducers: {
-    /* -----------------------------------------------
-       Optimistic Message Updates
-    ------------------------------------------------ */
-
     addMessage: (state, action) => {
       state.messages.push(action.payload);
     },
-
     appendTokenToMessage: (state, action) => {
       const { messageId, token } = action.payload;
-      const message = state.messages.find((item) => item._id === messageId);
-
-      if (message) {
-        message.content += token;
-      }
+      const msg = state.messages.find((item) => item._id === messageId);
+      if (msg) msg.content += token;
     },
 
     setChatId: (state, action) => {
       const chatId = action.payload;
       if (!chatId) return;
-      state.activeChat = state.activeChat?._id === chatId
-        ? state.activeChat
-        : { _id: chatId, title: "New Chat" };
+      state.activeChat =
+        state.activeChat?._id === chatId
+          ? state.activeChat
+          : { _id: chatId, title: "New Chat" };
       state.chats = upsertChat(state.chats, state.activeChat);
+    },
+
+    updateMessageStatus: (state, action) => {
+      const { messageId, status } = action.payload;
+      const msg = state.messages.find((item) => item._id === messageId);
+      if (msg) msg.status = status;
     },
 
     updateChatTitle: (state, action) => {
@@ -294,6 +334,12 @@ const chatSlice = createSlice({
           title,
         });
       }
+    },
+
+    updateMessageCitations: (state, action) => {
+      const { messageId, citations = [] } = action.payload || {};
+      const msg = state.messages.find((item) => item._id === messageId);
+      if (msg) msg.citations = citations;
     },
 
     setSending: (state, action) => {
@@ -360,6 +406,15 @@ const chatSlice = createSlice({
 
     clearMessages: (state) => {
       state.messages = [];
+    },
+
+    syncChatListItem: (state, action) => {
+      const chat = action.payload;
+      if (!chat?._id) return;
+      state.chats = upsertChat(state.chats, chat);
+      if (state.activeChat?._id === chat._id) {
+        state.activeChat = { ...state.activeChat, ...chat };
+      }
     },
   },
 
@@ -498,6 +553,38 @@ const chatSlice = createSlice({
          DELETE CHAT
       ============================================== */
 
+      .addCase(renameChat.pending, (state) => {
+        state.error = null;
+      })
+
+      .addCase(renameChat.fulfilled, (state, action) => {
+        const updatedChat = action.payload;
+        state.chats = upsertChat(state.chats, updatedChat);
+        if (state.activeChat?._id === updatedChat._id) {
+          state.activeChat = { ...state.activeChat, ...updatedChat };
+        }
+      })
+
+      .addCase(renameChat.rejected, (state, action) => {
+        state.error = action.payload || action.error.message;
+      })
+
+      .addCase(toggleChatPin.pending, (state) => {
+        state.error = null;
+      })
+
+      .addCase(toggleChatPin.fulfilled, (state, action) => {
+        const updatedChat = action.payload;
+        state.chats = upsertChat(state.chats, updatedChat);
+        if (state.activeChat?._id === updatedChat._id) {
+          state.activeChat = { ...state.activeChat, ...updatedChat };
+        }
+      })
+
+      .addCase(toggleChatPin.rejected, (state, action) => {
+        state.error = action.payload || action.error.message;
+      })
+
       .addCase(removeChat.pending, (state) => {
         state.deleting = true;
         state.error = null;
@@ -531,6 +618,8 @@ const chatSlice = createSlice({
 export const {
   addMessage,
   appendTokenToMessage,
+  updateMessageStatus,
+  updateMessageCitations,
   setChatId,
   updateChatTitle,
   setSending,
@@ -539,6 +628,7 @@ export const {
   receiveChatMessage,
   resetActiveChat,
   clearMessages,
+  syncChatListItem,
 } = chatSlice.actions;
 
 /* =====================================================

@@ -13,6 +13,11 @@ const chatSchemaModel = new mongoose.Schema(
       default: "New Chat",
       trim: true,
     },
+
+    pinned: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,

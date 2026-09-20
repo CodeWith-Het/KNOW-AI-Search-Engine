@@ -6,6 +6,7 @@ import {
   getChatById,
   getUserChats,
   searchChats,
+  togglePinChat,
   updateChatTitle,
   sendMessage,
   getChatMessages,
@@ -28,6 +29,8 @@ chatRouter.get("/:chatId/message", getChatMessages);
 chatRouter.post("/:chatId/message/stream", sendMessage);
 
 chatRouter.post("/:chatId/message", sendMessage);
+
+chatRouter.patch("/:chatId/pin", togglePinChat);
 
 chatRouter.get("/:chatId", getChatById);
 

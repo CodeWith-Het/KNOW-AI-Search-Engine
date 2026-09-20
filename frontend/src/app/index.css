@@ -25,23 +25,53 @@ body {
 }
 
 @keyframes shrink {
-  from { width: 100%; }
-  to { width: 0%; }
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
 }
 
 @keyframes fadeSlideUp {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes pulseNode {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(232, 163, 61, 0.5); }
-  50% { box-shadow: 0 0 0 6px rgba(232, 163, 61, 0); }
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(232, 163, 61, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(232, 163, 61, 0);
+  }
+}
+
+@keyframes deepResearchGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 16px rgba(91, 79, 233, 0.28);
+  }
+  50% {
+    box-shadow: 0 0 24px rgba(37, 99, 235, 0.48);
+  }
 }
 
 @keyframes orbDrift {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(-20px, 15px) scale(1.05); }
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-20px, 15px) scale(1.05);
+  }
 }
 
 .animate-fade-up {
@@ -52,4 +82,7 @@ body {
 }
 .animate-node {
   animation: pulseNode 2.2s ease-in-out infinite;
+}
+.animate-deep-research-glow {
+  animation: deepResearchGlow 2.4s ease-in-out infinite;
 }

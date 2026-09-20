@@ -8,34 +8,31 @@ const messageSchemaModel = new mongoose.Schema(
       required: true,
       index: true,
     },
-
     role: {
       type: String,
       enum: ["user", "assistant"],
       required: true,
     },
-
     content: {
       type: String,
       required: true,
       trim: true,
     },
-
+    citations: {
+      type: Array, // Web search sources store karne ke liye
+      default: [],
+    },
     isEdited: {
       type: Boolean,
       default: false,
     },
-
     editedAt: {
       type: Date,
       default: null,
     },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
 const MessageModel = mongoose.model("Message", messageSchemaModel);
-
-export default MessageModel
+export default MessageModel;

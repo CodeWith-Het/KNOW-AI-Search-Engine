@@ -61,6 +61,29 @@ export const sendMessage = async ({ chatId, message }) => {
   }
 };
 
+export const updateChatTitle = async (chatId, title) => {
+  try {
+    if (!chatId) throw new Error("Chat ID is required");
+    if (!title?.trim()) throw new Error("Chat title is required");
+
+    const response = await chatApi.patch(`/${chatId}`, { title: title.trim() });
+    return response.data?.chat || null;
+  } catch (error) {
+    throw getError(error, "Unable to rename chat");
+  }
+};
+
+export const togglePinChat = async (chatId, pinned) => {
+  try {
+    if (!chatId) throw new Error("Chat ID is required");
+
+    const response = await chatApi.patch(`/${chatId}/pin`, { pinned });
+    return response.data?.chat || null;
+  } catch (error) {
+    throw getError(error, pinned ? "Unable to pin chat" : "Unable to unpin chat");
+  }
+};
+
 export const deleteChat = async (chatId) => {
   try {
     if (!chatId) throw new Error("Chat ID is required");
