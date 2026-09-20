@@ -3,9 +3,6 @@ import ChatModel from "../models/chat.model.js";
 import MessageModel from "../models/message.model.js";
 import { generateAIResponse, streamAIResponse, generateChatTitle } from "../service/ai.service.js";
 
-// =====================================================
-// CREATE NEW CHAT
-// =====================================================
 export const createChat = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -24,9 +21,6 @@ export const createChat = async (req, res) => {
   }
 };
 
-// =====================================================
-// GET ALL USER CHATS
-// =====================================================
 export const getUserChats = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -41,9 +35,9 @@ export const getUserChats = async (req, res) => {
   }
 };
 
-// =====================================================
+
 // SEARCH CHATS
-// =====================================================
+
 export const searchChats = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -68,9 +62,6 @@ export const searchChats = async (req, res) => {
   }
 };
 
-// =====================================================
-// GET SINGLE CHAT
-// =====================================================
 export const getChatById = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -94,9 +85,6 @@ export const getChatById = async (req, res) => {
   }
 };
 
-// =====================================================
-// GET CHAT MESSAGES
-// =====================================================
 export const getChatMessages = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -120,18 +108,24 @@ export const getChatMessages = async (req, res) => {
   }
 };
 
-// =====================================================
-// SEND MESSAGE STREAM (POST /api/chats/:chatId/message)
-// =====================================================
 export const sendMessage = async (req, res) => {
-  // 1. Setup Server-Sent Events (SSE) Headers
   res.setHeader("Content-Type", "text/event-stream");
-  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Cache-Control", "no-cache, no-transform");
   res.setHeader("Connection", "keep-alive");
+  res.setHeader("X-Accel-Buffering", "no");
   res.flushHeaders();
 
+  let clientDisconnected = false;
+  let agentStream;
+  req.on("close", () => {
+    clientDisconnected = true;
+    Promise.resolve(agentStream?.return?.()).catch(() => {});
+  });
+
   const sendEvent = (payload) => {
-    res.write(`data: ${JSON.stringify(payload)}\n\n`);
+    if (!clientDisconnected && !res.writableEnded) {
+      res.write(`data: ${JSON.stringify(payload)}\n\n`);
+    }
   };
 
   try {
@@ -139,102 +133,228 @@ export const sendMessage = async (req, res) => {
     const { chatId } = req.params;
     const { message } = req.body;
 
-    if (!chatId || !mongoose.Types.ObjectId.isValid(chatId)) {
-      sendEvent({ type: "error", message: "Invalid Chat ID" });
-      return res.end();
-    }
     if (!message || !message.trim()) {
-      sendEvent({ type: "error", message: "Message is required" });
+      sendEvent({
+        type: "error",
+        message: "Message is required",
+      });
+
       return res.end();
     }
 
     const userMessage = message.trim();
-    const chat = await ChatModel.findOne({ _id: chatId, user: userId });
-    
-    if (!chat) {
-      sendEvent({ type: "error", message: "Chat not found" });
-      return res.end();
-    }
 
-    const previousUserMessageCount = await MessageModel.countDocuments({ chat: chat._id, role: "user" });
-    const isFirstMessage = previousUserMessageCount === 0;
+    let chatIdForRequest;
+    let chat;
+    let isFirstMessage = false;
+    let persistencePromise;
+    let titlePromise;
 
-    // 2. Save User Message immediately
-    await MessageModel.create({
-      chat: chat._id,
-      role: "user",
-      content: userMessage,
-    });
+    if (chatId === "new") {
+      chatIdForRequest = new mongoose.Types.ObjectId();
+      isFirstMessage = true;
 
-    const conversationMessages = await MessageModel.find({ chat: chat._id }).sort({ createdAt: 1 }).lean();
-    const aiMessages = conversationMessages.map((msg) => ({
-      role: msg.role === "assistant" ? "assistant" : "user",
-      content: msg.content,
-    }));
+      sendEvent({
+        type: "chat_id",
+        chatId: chatIdForRequest.toString(),
+      });
 
-    // 3. Request Stream from AI Service
-    const stream = await streamAIResponse(aiMessages);
-    let fullAiResponse = "";
+      persistencePromise = Promise.all([
+        ChatModel.create({
+          _id: chatIdForRequest,
+          user: userId,
+          title: "New Chat",
+        }),
+        MessageModel.create({
+          chat: chatIdForRequest,
+          role: "user",
+          content: userMessage,
+        }),
+      ]);
 
-    // 4. Iterate over chunks and stream directly to client
-    for await (const chunk of stream) {
-      const token = typeof chunk.content === "string" ? chunk.content : (chunk.content[0]?.text || "");
-      if (token) {
-        fullAiResponse += token;
-        sendEvent({ type: "token", text: token });
+      titlePromise = generateChatTitle(userMessage)
+        .then(async (generatedTitle) => {
+          if (!generatedTitle || clientDisconnected) return null;
+
+          await persistencePromise;
+
+          await ChatModel.findOneAndUpdate(
+            { _id: chatIdForRequest, user: userId },
+            { $set: { title: generatedTitle, updatedAt: new Date() } },
+          );
+
+          return generatedTitle;
+        })
+        .catch((error) => {
+          console.error("⚠️ Title generation error:", error.message);
+          return null;
+        });
+
+      console.log("🆕 New chat reserved:", chatIdForRequest.toString());
+    } else {
+      if (!mongoose.Types.ObjectId.isValid(chatId)) {
+        sendEvent({
+          type: "error",
+          message: "Invalid Chat ID",
+        });
+
+        return res.end();
+      }
+
+      chatIdForRequest = new mongoose.Types.ObjectId(chatId);
+      chat = await ChatModel.findOne({
+        _id: chatIdForRequest,
+        user: userId,
+      });
+
+      if (!chat) {
+        sendEvent({
+          type: "error",
+          message: "Chat not found",
+        });
+
+        return res.end();
+      }
+
+      const previousUserMessageCount =
+        await MessageModel.countDocuments({
+          chat: chatIdForRequest,
+          role: "user",
+        });
+
+      isFirstMessage =
+        previousUserMessageCount === 0;
+
+      await MessageModel.create({
+        chat: chatIdForRequest,
+        role: "user",
+        content: userMessage,
+      });
+
+      if (isFirstMessage) {
+        titlePromise = generateChatTitle(userMessage)
+          .then(async (generatedTitle) => {
+            if (!generatedTitle || clientDisconnected) return null;
+
+            await ChatModel.findOneAndUpdate(
+              { _id: chatIdForRequest, user: userId },
+              { $set: { title: generatedTitle, updatedAt: new Date() } },
+            );
+
+            return generatedTitle;
+          })
+          .catch((error) => {
+            console.error("⚠️ Title generation error:", error.message);
+            return null;
+          });
       }
     }
 
-    if (!fullAiResponse.trim()) {
-      throw new Error("AI returned an empty response");
+    const conversationMessages = chat
+      ? await MessageModel.find({ chat: chatIdForRequest })
+          .sort({ createdAt: 1 })
+          .lean()
+      : [{ role: "user", content: userMessage }];
+
+    const aiMessages =
+      conversationMessages.map((msg) => ({
+        role:
+          msg.role === "assistant"
+            ? "assistant"
+            : "user",
+
+        content: msg.content,
+      }));
+
+    agentStream = await streamAIResponse(aiMessages);
+
+    let fullAiResponse = "";
+
+    for await (const chunk of agentStream) {
+      if (clientDisconnected) break;
+
+      const token =
+        typeof chunk.content === "string"
+          ? chunk.content
+          : Array.isArray(chunk.content)
+            ? chunk.content
+                .map((item) => item?.text || "")
+                .join("")
+            : "";
+
+      if (!token) continue;
+
+      fullAiResponse += token;
+
+      sendEvent({
+        type: "token",
+        content: token,
+      });
     }
 
-    // 5. Save the final aggregated AI response to database
+    if (clientDisconnected) return;
+
+    if (!fullAiResponse.trim()) {
+      throw new Error(
+        "AI returned an empty response",
+      );
+    }
+
+    await persistencePromise;
+
     await MessageModel.create({
-      chat: chat._id,
+      chat: chatIdForRequest,
       role: "assistant",
       content: fullAiResponse.trim(),
     });
 
-    // 6. Handle background tasks (Title generation & UpdatedAt)
-    if (isFirstMessage) {
-      generateChatTitle(userMessage).then(async (generatedTitle) => {
-        if (generatedTitle) {
-          await ChatModel.findOneAndUpdate(
-            { _id: chat._id, user: userId },
-            { $set: { title: generatedTitle, updatedAt: new Date() } }
-          );
-        }
-      }).catch(err => console.error("⚠️ Title Gen Error:", err.message));
-    } else {
-      await ChatModel.findOneAndUpdate(
-        { _id: chat._id, user: userId },
-        { $set: { updatedAt: new Date() } }
-      );
+    await ChatModel.findOneAndUpdate(
+      {
+        _id: chatIdForRequest,
+        user: userId,
+      },
+      {
+        $set: {
+          updatedAt: new Date(),
+        },
+      },
+    );
+
+    if (isFirstMessage && titlePromise) {
+      const title = await titlePromise;
+      if (title) sendEvent({ type: "title", title });
     }
 
-    // 7. Close Stream safely
     sendEvent({ type: "done" });
-    res.end();
+
+    return res.end();
 
   } catch (error) {
-    console.error("❌ SEND MESSAGE STREAM ERROR:", error);
-    
-    // Catch rate limit errors gracefully for the UI
-    const isRateLimit = error?.status === 429 || error?.message?.includes("429");
-    const fallbackMsg = isRateLimit 
-        ? "Sorry, the AI service is currently busy due to rate limits. Please try again in a minute."
-        : "An error occurred while generating the response.";
+    console.error(
+      "❌ SEND MESSAGE STREAM ERROR:",
+      error,
+    );
 
-    sendEvent({ type: "error", message: fallbackMsg });
-    sendEvent({ type: "done" });
-    res.end();
+    const isRateLimit =
+      error?.status === 429 ||
+      error?.message?.includes("429");
+
+    const fallbackMsg = isRateLimit
+      ? "Sorry, the AI service is currently busy due to rate limits. Please try again in a minute."
+      : error?.message ||
+        "An error occurred while generating the response.";
+
+    sendEvent({
+      type: "error",
+      message: fallbackMsg,
+    });
+
+    if (!clientDisconnected) sendEvent({ type: "done" });
+
+    return res.end();
   }
 };
 
-// =====================================================
-// UPDATE CHAT TITLE
-// =====================================================
 export const updateChatTitle = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -258,9 +378,7 @@ export const updateChatTitle = async (req, res) => {
   }
 };
 
-// =====================================================
-// DELETE CHAT
-// =====================================================
+
 export const deleteChat = async (req, res) => {
   try {
     const userId = req.user.id;

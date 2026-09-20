@@ -1,7 +1,4 @@
-import {
-  createAsyncThunk,
-  createSlice,
-} from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 import {
   createChat as createChatRequest,
@@ -41,9 +38,7 @@ export const loadChats = createAsyncThunk(
     try {
       return await getChats();
     } catch (error) {
-      return rejectWithValue(
-        error.message || "Unable to load chats",
-      );
+      return rejectWithValue(error.message || "Unable to load chats");
     }
   },
 );
@@ -54,9 +49,7 @@ export const findChats = createAsyncThunk(
     try {
       return await searchChats(query);
     } catch (error) {
-      return rejectWithValue(
-        error.message || "Unable to search chats",
-      );
+      return rejectWithValue(error.message || "Unable to search chats");
     }
   },
 );
@@ -68,16 +61,12 @@ export const createChat = createAsyncThunk(
       const chat = await createChatRequest();
 
       if (!chat?._id) {
-        throw new Error(
-          "Server created chat but Chat ID is missing",
-        );
+        throw new Error("Server created chat but Chat ID is missing");
       }
 
       return chat;
     } catch (error) {
-      return rejectWithValue(
-        error.message || "Unable to create chat",
-      );
+      return rejectWithValue(error.message || "Unable to create chat");
     }
   },
 );
@@ -92,13 +81,12 @@ export const loadChat = createAsyncThunk(
 
       return await getChat(chatId);
     } catch (error) {
-      return rejectWithValue(
-        error.message || "Unable to load chat",
-      );
+      return rejectWithValue(error.message || "Unable to load chat");
     }
   },
 );
 
+// 🔥 MAIN FIX IS HERE 🔥
 export const sendMessageStream = createAsyncThunk(
   "chat/sendMessageStream",
   async ({ chatId, message }, { dispatch }) => {
@@ -106,88 +94,105 @@ export const sendMessageStream = createAsyncThunk(
       dispatch(setSending(true));
 
       // 1. User ka message turant UI me dikhao
-      dispatch(addMessage({ 
-        _id: Date.now().toString(), 
-        role: "user", 
-        content: message 
-      }));
+      dispatch(
+        addMessage({
+          _id: Date.now().toString(),
+          role: "user",
+          content: message,
+        }),
+      );
 
       // 2. AI ke liye ek khali (empty) message placeholder banao
       const aiMessageId = (Date.now() + 1).toString();
-      dispatch(addMessage({ 
-        _id: aiMessageId, 
-        role: "assistant", 
-        content: "" 
-      }));
+      dispatch(
+        addMessage({
+          _id: aiMessageId,
+          role: "assistant",
+          content: "",
+        }),
+      );
 
-      // 3. Fetch API se stream call karo (Apna JWT token/headers apne hisaab se adjust kar lena)
+      // 🔥 FIX: Agar chatId nahi hai (new chat), toh 'new' bhej do
+      const activeChatId = chatId || "new";
+
+      // 3. Fetch API se stream call karo
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/chats/${chatId}/message/stream`,
+        `${import.meta.env.VITE_BACKEND_URL}/api/chats/${activeChatId}/message/stream`,
         {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({ message }),
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({ message }), // Body se chatId nikal diya
         },
       );
 
-      if (!response.body) throw new Error("ReadableStream not supported in this browser.");
+      if (!response.body)
+        throw new Error("ReadableStream not supported in this browser.");
+
+      if (!response.ok) {
+        throw new Error(`Unable to send your message (${response.status})`);
+      }
 
       // 4. Stream Reader setup
       const reader = response.body.getReader();
       const decoder = new TextDecoder("utf-8");
+      let buffer = "";
+
+      let newGeneratedChatId = chatId;
 
       while (true) {
         const { value, done } = await reader.read();
-        
+
         if (done) {
-          dispatch(setSending(false));
-          break; // Stream khatam
+          buffer += decoder.decode();
+          break;
         }
 
-        // Chunk ko decode karo
-        const chunk = decoder.decode(value, { stream: true });
-        
-        // SSE lines ko split karo (ek chunk me multiple "data:" aa sakte hain)
-        const lines = chunk.split("\n\n");
-        
-        for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            const dataStr = line.replace("data: ", "");
-            
-            try {
-              const parsedData = JSON.parse(dataStr);
-              
-              if (parsedData.type === "token" && parsedData.text) {
-                // Har naya word AI placeholder me jod do
-                dispatch(appendTokenToMessage({ 
-                  messageId: aiMessageId, 
-                  token: parsedData.text 
-                }));
-              }
-              
-              if (parsedData.type === "done") {
-                dispatch(setSending(false));
-              }
+        buffer += decoder.decode(value, { stream: true });
+        const events = buffer.split("\n\n");
+        buffer = events.pop() || "";
 
-              if (parsedData.type === "error") {
-                throw new Error(parsedData.message);
-              }
-              
-            } catch {
-              // Ignore partial JSON chunks till next stream read completes them
-            }
+        for (const event of events) {
+          const dataLine = event
+            .split("\n")
+            .find((line) => line.startsWith("data: "));
+          if (!dataLine) continue;
+
+          const parsedData = JSON.parse(dataLine.slice(6));
+
+          if (parsedData.type === "chat_id" && parsedData.chatId) {
+            newGeneratedChatId = parsedData.chatId;
+            dispatch(setChatId(parsedData.chatId));
+            window.history.replaceState({}, "", `/chats/${parsedData.chatId}`);
           }
+
+          if (parsedData.type === "token" && parsedData.content) {
+            dispatch(
+              appendTokenToMessage({
+                messageId: aiMessageId,
+                token: parsedData.content,
+              }),
+            );
+          }
+
+          if (parsedData.type === "title") {
+            dispatch(updateChatTitle(parsedData.title));
+          }
+
+          if (parsedData.type === "done") dispatch(setSending(false));
+          if (parsedData.type === "error") throw new Error(parsedData.message);
         }
       }
+
+      return newGeneratedChatId;
     } catch (error) {
       console.error("Stream parsing error:", error);
       dispatch(setSending(false));
       throw error;
     }
-  }
+  },
 );
 
 export const removeChat = createAsyncThunk(
@@ -200,9 +205,7 @@ export const removeChat = createAsyncThunk(
 
       return await deleteChatRequest(chatId);
     } catch (error) {
-      return rejectWithValue(
-        error.message || "Unable to delete chat",
-      );
+      return rejectWithValue(error.message || "Unable to delete chat");
     }
   },
 );
@@ -216,24 +219,17 @@ const upsertChat = (chats, chat) => {
     return chats;
   }
 
-  const filtered = chats.filter(
-    (item) => item._id !== chat._id,
-  );
+  const filtered = chats.filter((item) => item._id !== chat._id);
 
   return [chat, ...filtered];
 };
 
-const appendMessage = (
-  messages,
-  message,
-) => {
+const appendMessage = (messages, message) => {
   if (!message?._id) {
     return messages;
   }
 
-  const exists = messages.some(
-    (item) => item._id === message._id,
-  );
+  const exists = messages.some((item) => item._id === message._id);
 
   if (exists) {
     return messages;
@@ -242,10 +238,7 @@ const appendMessage = (
   return [...messages, message];
 };
 
-const appendMessages = (
-  messages,
-  newMessages = [],
-) => {
+const appendMessages = (messages, newMessages = []) => {
   let result = messages;
 
   for (const message of newMessages) {
@@ -275,12 +268,31 @@ const chatSlice = createSlice({
 
     appendTokenToMessage: (state, action) => {
       const { messageId, token } = action.payload;
-      const message = state.messages.find(
-        (item) => item._id === messageId,
-      );
+      const message = state.messages.find((item) => item._id === messageId);
 
       if (message) {
         message.content += token;
+      }
+    },
+
+    setChatId: (state, action) => {
+      const chatId = action.payload;
+      if (!chatId) return;
+      state.activeChat = state.activeChat?._id === chatId
+        ? state.activeChat
+        : { _id: chatId, title: "New Chat" };
+      state.chats = upsertChat(state.chats, state.activeChat);
+    },
+
+    updateChatTitle: (state, action) => {
+      const title = action.payload;
+      if (!title) return;
+      if (state.activeChat) state.activeChat.title = title;
+      if (state.activeChat?._id) {
+        state.chats = upsertChat(state.chats, {
+          ...state.activeChat,
+          title,
+        });
       }
     },
 
@@ -308,43 +320,27 @@ const chatSlice = createSlice({
        Socket Message
     ------------------------------------------------ */
 
-    receiveChatMessage: (
-      state,
-      action,
-    ) => {
-      const {
-        chat,
-        userMessage,
-        assistantMessage,
-      } = action.payload || {};
+    receiveChatMessage: (state, action) => {
+      const { chat, userMessage, assistantMessage } = action.payload || {};
 
       /* Update chat list */
 
       if (chat?._id) {
-        state.chats = upsertChat(
-          state.chats,
-          chat,
-        );
+        state.chats = upsertChat(state.chats, chat);
       }
 
       /* Ignore messages from another chat */
 
-      if (
-        !state.activeChat?._id ||
-        state.activeChat._id !== chat?._id
-      ) {
+      if (!state.activeChat?._id || state.activeChat._id !== chat?._id) {
         return;
       }
 
       /* Add messages without duplicates */
 
-      state.messages = appendMessages(
-        state.messages,
-        [
-          userMessage,
-          assistantMessage,
-        ],
-      );
+      state.messages = appendMessages(state.messages, [
+        userMessage,
+        assistantMessage,
+      ]);
     },
 
     /* -----------------------------------------------
@@ -378,247 +374,153 @@ const chatSlice = createSlice({
          LOAD CHATS
       ============================================== */
 
-      .addCase(
-        loadChats.pending,
-        (state) => {
-          state.loading = true;
-          state.error = null;
-        },
-      )
+      .addCase(loadChats.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
 
-      .addCase(
-        loadChats.fulfilled,
-        (state, action) => {
-          state.loading = false;
+      .addCase(loadChats.fulfilled, (state, action) => {
+        state.loading = false;
 
-          state.chats =
-            Array.isArray(action.payload)
-              ? action.payload
-              : [];
-        },
-      )
+        state.chats = Array.isArray(action.payload) ? action.payload : [];
+      })
 
-      .addCase(
-        loadChats.rejected,
-        (state, action) => {
-          state.loading = false;
+      .addCase(loadChats.rejected, (state, action) => {
+        state.loading = false;
 
-          state.error =
-            action.payload ||
-            action.error.message;
-        },
-      )
+        state.error = action.payload || action.error.message;
+      })
 
       /* =============================================
          SEARCH CHATS
       ============================================== */
 
-      .addCase(
-        findChats.pending,
-        (state) => {
-          state.searching = true;
-          state.error = null;
-        },
-      )
+      .addCase(findChats.pending, (state) => {
+        state.searching = true;
+        state.error = null;
+      })
 
-      .addCase(
-        findChats.fulfilled,
-        (state, action) => {
-          state.searching = false;
+      .addCase(findChats.fulfilled, (state, action) => {
+        state.searching = false;
 
-          state.chats =
-            Array.isArray(action.payload)
-              ? action.payload
-              : [];
-        },
-      )
+        state.chats = Array.isArray(action.payload) ? action.payload : [];
+      })
 
-      .addCase(
-        findChats.rejected,
-        (state, action) => {
-          state.searching = false;
+      .addCase(findChats.rejected, (state, action) => {
+        state.searching = false;
 
-          state.error =
-            action.payload ||
-            action.error.message;
-        },
-      )
+        state.error = action.payload || action.error.message;
+      })
 
       /* =============================================
          CREATE CHAT
       ============================================== */
 
-      .addCase(
-        createChat.pending,
-        (state) => {
-          state.creating = true;
-          state.error = null;
-        },
-      )
+      .addCase(createChat.pending, (state) => {
+        state.creating = true;
+        state.error = null;
+      })
 
-      .addCase(
-        createChat.fulfilled,
-        (state, action) => {
-          state.creating = false;
+      .addCase(createChat.fulfilled, (state, action) => {
+        state.creating = false;
 
-          const chat = action.payload;
+        const chat = action.payload;
 
-          if (!chat?._id) {
-            state.error =
-              "Created chat has no Chat ID";
-            return;
-          }
+        if (!chat?._id) {
+          state.error = "Created chat has no Chat ID";
+          return;
+        }
 
-          state.chats = upsertChat(
-            state.chats,
-            chat,
-          );
+        state.chats = upsertChat(state.chats, chat);
 
-          state.activeChat = chat;
+        state.activeChat = chat;
 
-          state.messages = [];
-        },
-      )
+        state.messages = [];
+      })
 
-      .addCase(
-        createChat.rejected,
-        (state, action) => {
-          state.creating = false;
+      .addCase(createChat.rejected, (state, action) => {
+        state.creating = false;
 
-          state.error =
-            action.payload ||
-            action.error.message;
-        },
-      )
+        state.error = action.payload || action.error.message;
+      })
 
       /* =============================================
          LOAD SINGLE CHAT
       ============================================== */
 
-      .addCase(
-        loadChat.pending,
-        (state) => {
-          state.loading = true;
-          state.error = null;
-        },
-      )
+      .addCase(loadChat.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
 
-      .addCase(
-        loadChat.fulfilled,
-        (state, action) => {
-          state.loading = false;
+      .addCase(loadChat.fulfilled, (state, action) => {
+        state.loading = false;
 
-          const {
-            chat,
-            messages,
-          } = action.payload;
+        const { chat, messages } = action.payload;
 
-          state.activeChat =
-            chat || null;
+        state.activeChat = chat || null;
 
-          state.messages =
-            Array.isArray(messages)
-              ? messages
-              : [];
+        state.messages = Array.isArray(messages) ? messages : [];
 
-          /* Keep sidebar updated */
+        /* Keep sidebar updated */
 
-          if (chat?._id) {
-            state.chats = upsertChat(
-              state.chats,
-              chat,
-            );
-          }
-        },
-      )
+        if (chat?._id) {
+          state.chats = upsertChat(state.chats, chat);
+        }
+      })
 
-      .addCase(
-        loadChat.rejected,
-        (state, action) => {
-          state.loading = false;
+      .addCase(loadChat.rejected, (state, action) => {
+        state.loading = false;
 
-          state.error =
-            action.payload ||
-            action.error.message;
-        },
-      )
+        state.error = action.payload || action.error.message;
+      })
 
       /* =============================================
          SEND MESSAGE
       ============================================== */
 
-      .addCase(
-        sendMessageStream.pending,
-        (state) => {
-          state.sending = true;
-          state.error = null;
-        },
-      )
+      .addCase(sendMessageStream.pending, (state) => {
+        state.sending = true;
+        state.error = null;
+      })
 
-      .addCase(
-        sendMessageStream.fulfilled,
-        (state) => {
-          state.sending = false;
-        },
-      )
+      .addCase(sendMessageStream.fulfilled, (state) => {
+        state.sending = false;
+      })
 
-      .addCase(
-        sendMessageStream.rejected,
-        (state, action) => {
-          state.sending = false;
+      .addCase(sendMessageStream.rejected, (state, action) => {
+        state.sending = false;
 
-          state.error =
-            action.payload ||
-            action.error.message;
-        },
-      )
+        state.error = action.payload || action.error.message;
+      })
 
       /* =============================================
          DELETE CHAT
       ============================================== */
 
-      .addCase(
-        removeChat.pending,
-        (state) => {
-          state.deleting = true;
-          state.error = null;
-        },
-      )
+      .addCase(removeChat.pending, (state) => {
+        state.deleting = true;
+        state.error = null;
+      })
 
-      .addCase(
-        removeChat.fulfilled,
-        (state, action) => {
-          state.deleting = false;
+      .addCase(removeChat.fulfilled, (state, action) => {
+        state.deleting = false;
 
-          const deletedChatId =
-            action.payload;
+        const deletedChatId = action.payload;
 
-          state.chats =
-            state.chats.filter(
-              (chat) =>
-                chat._id !== deletedChatId,
-            );
+        state.chats = state.chats.filter((chat) => chat._id !== deletedChatId);
 
-          if (
-            state.activeChat?._id ===
-            deletedChatId
-          ) {
-            state.activeChat = null;
-            state.messages = [];
-          }
-        },
-      )
+        if (state.activeChat?._id === deletedChatId) {
+          state.activeChat = null;
+          state.messages = [];
+        }
+      })
 
-      .addCase(
-        removeChat.rejected,
-        (state, action) => {
-          state.deleting = false;
+      .addCase(removeChat.rejected, (state, action) => {
+        state.deleting = false;
 
-          state.error =
-            action.payload ||
-            action.error.message;
-        },
-      );
+        state.error = action.payload || action.error.message;
+      });
   },
 });
 
@@ -629,6 +531,8 @@ const chatSlice = createSlice({
 export const {
   addMessage,
   appendTokenToMessage,
+  setChatId,
+  updateChatTitle,
   setSending,
   clearChatError,
   setSocketConnected,
@@ -641,32 +545,22 @@ export const {
    SELECTORS
 ===================================================== */
 
-export const selectChats = (state) =>
-  state.chat.chats;
+export const selectChats = (state) => state.chat.chats;
 
-export const selectActiveChat = (state) =>
-  state.chat.activeChat;
+export const selectActiveChat = (state) => state.chat.activeChat;
 
-export const selectMessages = (state) =>
-  state.chat.messages;
+export const selectMessages = (state) => state.chat.messages;
 
-export const selectChatLoading = (state) =>
-  state.chat.loading;
+export const selectChatLoading = (state) => state.chat.loading;
 
-export const selectChatSending = (state) =>
-  state.chat.sending;
+export const selectChatSending = (state) => state.chat.sending;
 
-export const selectChatCreating = (state) =>
-  state.chat.creating;
+export const selectChatCreating = (state) => state.chat.creating;
 
-export const selectChatDeleting = (state) =>
-  state.chat.deleting;
+export const selectChatDeleting = (state) => state.chat.deleting;
 
-export const selectChatError = (state) =>
-  state.chat.error;
+export const selectChatError = (state) => state.chat.error;
 
-export const selectSocketConnected = (
-  state,
-) => state.chat.socketConnected;
+export const selectSocketConnected = (state) => state.chat.socketConnected;
 
 export default chatSlice.reducer;

@@ -33,6 +33,7 @@ const ChatPage = () => {
     deleting,
     error,
   } = useSelector((state) => state.chat);
+  const effectiveChatId = chatId || activeChat?._id || null;
 
   const [draft, setDraft] = useState("");
   const [query, setQuery] = useState("");
@@ -92,24 +93,34 @@ const ChatPage = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+
     const message = draft.trim();
-    if (!chatId) {
-      toast.error("Please create or select a chat first");
-      return;
-    }
+
     if (!message || sending) return;
 
     setDraft("");
-    if (event.target.querySelector("textarea")) {
-      event.target.querySelector("textarea").style.height = "auto";
+
+    const textarea = event.currentTarget.querySelector("textarea");
+    if (textarea) {
+      textarea.style.height = "auto";
     }
 
     try {
-      await dispatch(sendMessageStream({ chatId, message })).unwrap();
+      await dispatch(
+        sendMessageStream({
+          chatId: effectiveChatId,
+          message,
+        }),
+      ).unwrap();
     } catch (error) {
+      console.error("Message send failed:", error);
+
       toast.error(
-        `Message failed: ${typeof error === "string" ? error : error?.message || "Failed to send message"}`,
+        typeof error === "string"
+          ? error
+          : error?.message || "Failed to send message",
       );
+
       setDraft(message);
     }
   };
@@ -356,17 +367,13 @@ const ChatPage = () => {
                   }
                 }}
                 rows={1}
-                placeholder={
-                  chatId
-                    ? "Message KNOW AI..."
-                    : "Create or select a chat first..."
-                }
-                disabled={sending || !chatId}
+                placeholder="Message KNOW AI..."
+                disabled={sending}
                 className="max-h-36 min-h-[44px] flex-1 resize-none bg-transparent px-3 py-3 text-sm outline-none placeholder:text-white/30 disabled:cursor-not-allowed disabled:opacity-50 overflow-y-auto [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/20"
               />
               <button
                 type="submit"
-                disabled={!chatId || !draft.trim() || sending}
+                disabled={!draft.trim() || sending}
                 className="rounded-lg bg-[#e8a33d] px-4 py-3 text-sm font-bold text-[#17191b] transition hover:bg-[#f2bc65] disabled:cursor-not-allowed disabled:opacity-40 mb-1"
               >
                 {sending ? "..." : "Send"}
