@@ -12,7 +12,7 @@ import {
   loadChats,
   removeChat,
   resetActiveChat,
-  sendMessage,
+  sendMessageStream,
 } from "../chat.slice.js";
 import useChat from "../hook/useChat.js";
 
@@ -56,6 +56,7 @@ const ChatPage = () => {
   useEffect(() => {
     messageEnd.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, sending]);
+
   useEffect(() => {
     if (error) toast.error(error);
   }, [error]);
@@ -99,13 +100,12 @@ const ChatPage = () => {
     if (!message || sending) return;
 
     setDraft("");
-    // Reset textarea height manually after send
     if (event.target.querySelector("textarea")) {
       event.target.querySelector("textarea").style.height = "auto";
     }
 
     try {
-      await dispatch(sendMessage({ chatId, message })).unwrap();
+      await dispatch(sendMessageStream({ chatId, message })).unwrap();
     } catch (error) {
       toast.error(
         `Message failed: ${typeof error === "string" ? error : error?.message || "Failed to send message"}`,
@@ -153,11 +153,12 @@ const ChatPage = () => {
   };
 
   return (
-    <main className="min-h-screen bg-[#101214] text-[#f5f3ed]">
-      <div className="flex min-h-screen">
+    // FIX 1: min-h-screen hata kar h-screen aur overflow-hidden lagaya taaki global scrollbar na aaye
+    <main className="h-screen w-full bg-[#101214] text-[#f5f3ed] overflow-hidden">
+      <div className="flex h-full w-full">
         {/* SIDEBAR */}
-        <aside className="hidden w-80 shrink-0 flex-col border-r border-white/10 bg-[#17191b] lg:flex">
-          <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
+        <aside className="hidden w-80 shrink-0 flex-col border-r border-white/10 bg-[#17191b] lg:flex h-full">
+          <div className="flex items-center justify-between border-b border-white/10 px-6 py-5 shrink-0">
             <div>
               <p className="font-mono-label text-[10px] uppercase tracking-[0.28em] text-[#e8a33d]">
                 KNOW AI
@@ -173,7 +174,7 @@ const ChatPage = () => {
               {creating ? "..." : "+"}
             </button>
           </div>
-          <div className="px-5 py-4">
+          <div className="px-5 py-4 shrink-0">
             <input
               value={query}
               onChange={handleSearch}
@@ -181,7 +182,9 @@ const ChatPage = () => {
               className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-sm outline-none placeholder:text-white/30 focus:border-[#e8a33d]"
             />
           </div>
-          <nav className="flex-1 space-y-1 overflow-y-auto px-3">
+
+          {/* FIX 3: Sidebar scroll area with custom thin scrollbar */}
+          <nav className="flex-1 space-y-1 overflow-y-auto px-3 pb-4 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/10 hover:[&::-webkit-scrollbar-thumb]:bg-white/20">
             {loading && !chats.length && (
               <div className="px-3 py-5 text-center text-xs text-white/30">
                 Loading chats...
@@ -232,14 +235,15 @@ const ChatPage = () => {
               </div>
             )}
           </nav>
-          <div className="border-t border-white/10 px-5 py-4 text-sm text-white/60">
+
+          <div className="border-t border-white/10 px-5 py-4 text-sm text-white/60 shrink-0">
             {user?.username || user?.email}
           </div>
         </aside>
 
         {/* MAIN CHAT */}
-        <section className="flex min-w-0 flex-1 flex-col">
-          <header className="border-b border-white/10 px-4 py-4 sm:px-8">
+        <section className="flex min-w-0 flex-1 flex-col h-full relative">
+          <header className="border-b border-white/10 px-4 py-4 sm:px-8 shrink-0">
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <p className="font-mono-label text-[10px] uppercase tracking-[0.25em] text-[#e8a33d]">
@@ -282,7 +286,8 @@ const ChatPage = () => {
             </div>
           </header>
 
-          <div className="flex-1 overflow-y-auto px-4 py-8 sm:px-10">
+          {/* FIX 2: Only Chat area will scroll now, with a sleek custom scrollbar */}
+          <div className="flex-1 overflow-y-auto px-4 py-8 sm:px-10 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/10 hover:[&::-webkit-scrollbar-thumb]:bg-white/20">
             <div className="mx-auto max-w-3xl space-y-7">
               {loading && !messages.length && (
                 <div className="py-16 text-center font-mono-label text-xs uppercase tracking-[0.2em] text-white/35">
@@ -334,14 +339,14 @@ const ChatPage = () => {
 
           <form
             onSubmit={handleSubmit}
-            className="border-t border-white/10 bg-[#141618] px-4 py-4 sm:px-10"
+            className="border-t border-white/10 bg-[#141618] px-4 py-4 sm:px-10 shrink-0"
           >
             <div className="mx-auto flex max-w-3xl items-end gap-3 rounded-xl border border-white/10 bg-white/[0.04] p-2 focus-within:border-[#e8a33d]/70">
               <textarea
                 value={draft}
                 onChange={(event) => {
                   setDraft(event.target.value);
-                  event.target.style.height = "auto"; // Auto-resize fix
+                  event.target.style.height = "auto";
                   event.target.style.height = event.target.scrollHeight + "px";
                 }}
                 onKeyDown={(event) => {
@@ -357,12 +362,12 @@ const ChatPage = () => {
                     : "Create or select a chat first..."
                 }
                 disabled={sending || !chatId}
-                className="max-h-36 min-h-[44px] flex-1 resize-none bg-transparent px-3 py-3 text-sm outline-none placeholder:text-white/30 disabled:cursor-not-allowed disabled:opacity-50 overflow-y-auto"
+                className="max-h-36 min-h-[44px] flex-1 resize-none bg-transparent px-3 py-3 text-sm outline-none placeholder:text-white/30 disabled:cursor-not-allowed disabled:opacity-50 overflow-y-auto [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/20"
               />
               <button
                 type="submit"
                 disabled={!chatId || !draft.trim() || sending}
-                className="rounded-lg bg-[#e8a33d] px-4 py-3 text-sm font-bold text-[#17191b] transition hover:bg-[#f2bc65] disabled:cursor-not-allowed disabled:opacity-40"
+                className="rounded-lg bg-[#e8a33d] px-4 py-3 text-sm font-bold text-[#17191b] transition hover:bg-[#f2bc65] disabled:cursor-not-allowed disabled:opacity-40 mb-1"
               >
                 {sending ? "..." : "Send"}
               </button>

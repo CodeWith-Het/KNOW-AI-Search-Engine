@@ -9,7 +9,6 @@ import {
   getChat,
   getChats,
   searchChats,
-  sendMessage as sendMessageRequest,
 } from "./service/chatApi.service.js";
 
 /* =====================================================
@@ -100,31 +99,95 @@ export const loadChat = createAsyncThunk(
   },
 );
 
-export const sendMessage = createAsyncThunk(
-  "chat/sendMessage",
-  async (
-    { chatId, message },
-    { rejectWithValue },
-  ) => {
+export const sendMessageStream = createAsyncThunk(
+  "chat/sendMessageStream",
+  async ({ chatId, message }, { dispatch }) => {
     try {
-      if (!chatId) {
-        throw new Error("Chat ID is required");
-      }
+      dispatch(setSending(true));
 
-      if (!message?.trim()) {
-        throw new Error("Message is required");
-      }
+      // 1. User ka message turant UI me dikhao
+      dispatch(addMessage({ 
+        _id: Date.now().toString(), 
+        role: "user", 
+        content: message 
+      }));
 
-      return await sendMessageRequest({
-        chatId,
-        message: message.trim(),
-      });
-    } catch (error) {
-      return rejectWithValue(
-        error.message || "Unable to send message",
+      // 2. AI ke liye ek khali (empty) message placeholder banao
+      const aiMessageId = (Date.now() + 1).toString();
+      dispatch(addMessage({ 
+        _id: aiMessageId, 
+        role: "assistant", 
+        content: "" 
+      }));
+
+      // 3. Fetch API se stream call karo (Apna JWT token/headers apne hisaab se adjust kar lena)
+      const response = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/chats/${chatId}/message/stream`,
+        {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({ message }),
+        },
       );
+
+      if (!response.body) throw new Error("ReadableStream not supported in this browser.");
+
+      // 4. Stream Reader setup
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+
+      while (true) {
+        const { value, done } = await reader.read();
+        
+        if (done) {
+          dispatch(setSending(false));
+          break; // Stream khatam
+        }
+
+        // Chunk ko decode karo
+        const chunk = decoder.decode(value, { stream: true });
+        
+        // SSE lines ko split karo (ek chunk me multiple "data:" aa sakte hain)
+        const lines = chunk.split("\n\n");
+        
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            const dataStr = line.replace("data: ", "");
+            
+            try {
+              const parsedData = JSON.parse(dataStr);
+              
+              if (parsedData.type === "token" && parsedData.text) {
+                // Har naya word AI placeholder me jod do
+                dispatch(appendTokenToMessage({ 
+                  messageId: aiMessageId, 
+                  token: parsedData.text 
+                }));
+              }
+              
+              if (parsedData.type === "done") {
+                dispatch(setSending(false));
+              }
+
+              if (parsedData.type === "error") {
+                throw new Error(parsedData.message);
+              }
+              
+            } catch {
+              // Ignore partial JSON chunks till next stream read completes them
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Stream parsing error:", error);
+      dispatch(setSending(false));
+      throw error;
     }
-  },
+  }
 );
 
 export const removeChat = createAsyncThunk(
@@ -202,6 +265,29 @@ const chatSlice = createSlice({
   initialState,
 
   reducers: {
+    /* -----------------------------------------------
+       Optimistic Message Updates
+    ------------------------------------------------ */
+
+    addMessage: (state, action) => {
+      state.messages.push(action.payload);
+    },
+
+    appendTokenToMessage: (state, action) => {
+      const { messageId, token } = action.payload;
+      const message = state.messages.find(
+        (item) => item._id === messageId,
+      );
+
+      if (message) {
+        message.content += token;
+      }
+    },
+
+    setSending: (state, action) => {
+      state.sending = action.payload;
+    },
+
     /* -----------------------------------------------
        Clear Error
     ------------------------------------------------ */
@@ -462,7 +548,7 @@ const chatSlice = createSlice({
       ============================================== */
 
       .addCase(
-        sendMessage.pending,
+        sendMessageStream.pending,
         (state) => {
           state.sending = true;
           state.error = null;
@@ -470,41 +556,14 @@ const chatSlice = createSlice({
       )
 
       .addCase(
-        sendMessage.fulfilled,
-        (state, action) => {
+        sendMessageStream.fulfilled,
+        (state) => {
           state.sending = false;
-
-          const {
-            chat,
-            userMessage,
-            assistantMessage,
-          } = action.payload;
-
-          /* Update active chat */
-
-          if (chat?._id) {
-            state.activeChat = chat;
-
-            state.chats = upsertChat(
-              state.chats,
-              chat,
-            );
-          }
-
-          /* Prevent duplicate messages */
-
-          state.messages = appendMessages(
-            state.messages,
-            [
-              userMessage,
-              assistantMessage,
-            ],
-          );
         },
       )
 
       .addCase(
-        sendMessage.rejected,
+        sendMessageStream.rejected,
         (state, action) => {
           state.sending = false;
 
@@ -568,6 +627,9 @@ const chatSlice = createSlice({
 ===================================================== */
 
 export const {
+  addMessage,
+  appendTokenToMessage,
+  setSending,
   clearChatError,
   setSocketConnected,
   receiveChatMessage,

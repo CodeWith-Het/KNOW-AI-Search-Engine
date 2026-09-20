@@ -1,4 +1,4 @@
-import {  geminiModel, systemPrompt,  } from "../ai/ai.agent.js";
+import { geminiModel, systemPrompt } from "../ai/ai.agent.js";
 import { SystemMessage, HumanMessage, AIMessage } from "@langchain/core/messages";
 import { generateChatTitle } from "../ai/ai.title.js";
 
@@ -10,9 +10,9 @@ const contentToText = (content) => {
   return String(content ?? "");
 };
 
+// Standard full response
 export const generateAIResponse = async (messages) => {
   try {
-    // Format messages for Langchain Core
     const formattedMessages = [
       new SystemMessage(systemPrompt),
       ...messages.map(msg => 
@@ -20,7 +20,6 @@ export const generateAIResponse = async (messages) => {
       )
     ];
 
-    // Gemini Model Invoke 🚀
     const response = await geminiModel.invoke(formattedMessages);
     const content = contentToText(response.content).trim();
 
@@ -28,6 +27,25 @@ export const generateAIResponse = async (messages) => {
     return content;
   } catch (error) {
     console.error("❌ generateAIResponse ERROR:", error);
+    throw error;
+  }
+};
+
+// ⚡ New Streaming Function
+export const streamAIResponse = async (messages) => {
+  try {
+    const formattedMessages = [
+      new SystemMessage(systemPrompt),
+      ...messages.map(msg => 
+        msg.role === "user" ? new HumanMessage(msg.content) : new AIMessage(msg.content)
+      )
+    ];
+
+    // Returns an async iterable stream instead of waiting for the full block
+    const stream = await geminiModel.stream(formattedMessages);
+    return stream;
+  } catch (error) {
+    console.error("❌ streamAIResponse ERROR:", error);
     throw error;
   }
 };

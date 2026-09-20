@@ -1,8 +1,7 @@
 import mongoose from "mongoose";
 import ChatModel from "../models/chat.model.js";
 import MessageModel from "../models/message.model.js";
-import { generateAIResponse, generateChatTitle } from "../service/ai.service.js";
-import { emitChatMessage } from "../socket/server.socket.js";
+import { generateAIResponse, streamAIResponse, generateChatTitle } from "../service/ai.service.js";
 
 // =====================================================
 // CREATE NEW CHAT
@@ -122,29 +121,46 @@ export const getChatMessages = async (req, res) => {
 };
 
 // =====================================================
-// SEND MESSAGE (POST /api/chats/:chatId/message)
+// SEND MESSAGE STREAM (POST /api/chats/:chatId/message)
 // =====================================================
 export const sendMessage = async (req, res) => {
+  // 1. Setup Server-Sent Events (SSE) Headers
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.flushHeaders();
+
+  const sendEvent = (payload) => {
+    res.write(`data: ${JSON.stringify(payload)}\n\n`);
+  };
+
   try {
     const userId = req.user.id;
     const { chatId } = req.params;
     const { message } = req.body;
 
     if (!chatId || !mongoose.Types.ObjectId.isValid(chatId)) {
-      return res.status(400).json({ success: false, message: "Invalid Chat ID" });
+      sendEvent({ type: "error", message: "Invalid Chat ID" });
+      return res.end();
     }
     if (!message || !message.trim()) {
-      return res.status(400).json({ success: false, message: "Message is required" });
+      sendEvent({ type: "error", message: "Message is required" });
+      return res.end();
     }
 
     const userMessage = message.trim();
     const chat = await ChatModel.findOne({ _id: chatId, user: userId });
-    if (!chat) return res.status(404).json({ success: false, message: "Chat not found" });
+    
+    if (!chat) {
+      sendEvent({ type: "error", message: "Chat not found" });
+      return res.end();
+    }
 
     const previousUserMessageCount = await MessageModel.countDocuments({ chat: chat._id, role: "user" });
     const isFirstMessage = previousUserMessageCount === 0;
 
-    const savedUserMessage = await MessageModel.create({
+    // 2. Save User Message immediately
+    await MessageModel.create({
       chat: chat._id,
       role: "user",
       content: userMessage,
@@ -156,74 +172,63 @@ export const sendMessage = async (req, res) => {
       content: msg.content,
     }));
 
-    let aiResponse;
-    try {
-      aiResponse = await generateAIResponse(aiMessages);
-    } catch (aiError) {
-      console.error("❌ AI RESPONSE ERROR:", aiError);
-      await MessageModel.findByIdAndDelete(savedUserMessage._id);
-      return res.status(502).json({
-        success: false,
-        message: process.env.NODE_ENV === "production" ? "AI service failed" : aiError.message,
-      });
-    }
+    // 3. Request Stream from AI Service
+    const stream = await streamAIResponse(aiMessages);
+    let fullAiResponse = "";
 
-    if (!aiResponse || !aiResponse.trim()) {
-      await MessageModel.findByIdAndDelete(savedUserMessage._id);
-      return res.status(502).json({ success: false, message: "AI returned an empty response" });
-    }
-
-    const savedAssistantMessage = await MessageModel.create({
-      chat: chat._id,
-      role: "assistant",
-      content: aiResponse.trim(),
-    });
-
-    let updatedChat = chat;
-    if (isFirstMessage) {
-      try {
-        const generatedTitle = await generateChatTitle(userMessage);
-        if (generatedTitle) {
-          updatedChat = await ChatModel.findOneAndUpdate(
-            { _id: chat._id, user: userId },
-            { $set: { title: generatedTitle, updatedAt: new Date() } },
-            { new: true, runValidators: true }
-          );
-        }
-      } catch (titleError) {
-        console.error("⚠️ Generate Chat Title Error:", titleError.message);
+    // 4. Iterate over chunks and stream directly to client
+    for await (const chunk of stream) {
+      const token = typeof chunk.content === "string" ? chunk.content : (chunk.content[0]?.text || "");
+      if (token) {
+        fullAiResponse += token;
+        sendEvent({ type: "token", text: token });
       }
     }
 
-    if (!isFirstMessage) {
-      updatedChat = await ChatModel.findOneAndUpdate(
+    if (!fullAiResponse.trim()) {
+      throw new Error("AI returned an empty response");
+    }
+
+    // 5. Save the final aggregated AI response to database
+    await MessageModel.create({
+      chat: chat._id,
+      role: "assistant",
+      content: fullAiResponse.trim(),
+    });
+
+    // 6. Handle background tasks (Title generation & UpdatedAt)
+    if (isFirstMessage) {
+      generateChatTitle(userMessage).then(async (generatedTitle) => {
+        if (generatedTitle) {
+          await ChatModel.findOneAndUpdate(
+            { _id: chat._id, user: userId },
+            { $set: { title: generatedTitle, updatedAt: new Date() } }
+          );
+        }
+      }).catch(err => console.error("⚠️ Title Gen Error:", err.message));
+    } else {
+      await ChatModel.findOneAndUpdate(
         { _id: chat._id, user: userId },
-        { $set: { updatedAt: new Date() } },
-        { new: true }
+        { $set: { updatedAt: new Date() } }
       );
     }
 
-    if (!updatedChat) updatedChat = chat;
+    // 7. Close Stream safely
+    sendEvent({ type: "done" });
+    res.end();
 
-    emitChatMessage(chat._id.toString(), {
-      chat: updatedChat,
-      userMessage: savedUserMessage,
-      assistantMessage: savedAssistantMessage,
-    });
-
-    return res.status(201).json({
-      success: true,
-      message: "Message sent successfully",
-      chat: updatedChat,
-      userMessage: savedUserMessage,
-      assistantMessage: savedAssistantMessage,
-    });
   } catch (error) {
-    console.error("❌ SEND MESSAGE ERROR:", error);
-    return res.status(500).json({
-      success: false,
-      message: process.env.NODE_ENV === "production" ? "Failed to send message" : error.message,
-    });
+    console.error("❌ SEND MESSAGE STREAM ERROR:", error);
+    
+    // Catch rate limit errors gracefully for the UI
+    const isRateLimit = error?.status === 429 || error?.message?.includes("429");
+    const fallbackMsg = isRateLimit 
+        ? "Sorry, the AI service is currently busy due to rate limits. Please try again in a minute."
+        : "An error occurred while generating the response.";
+
+    sendEvent({ type: "error", message: fallbackMsg });
+    sendEvent({ type: "done" });
+    res.end();
   }
 };
 

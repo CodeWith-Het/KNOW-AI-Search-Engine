@@ -25,6 +25,8 @@ chatRouter.get("/search", searchChats);
 
 chatRouter.get("/:chatId/message", getChatMessages);
 
+chatRouter.post("/:chatId/message/stream", sendMessage);
+
 chatRouter.post("/:chatId/message", sendMessage);
 
 chatRouter.get("/:chatId", getChatById);
